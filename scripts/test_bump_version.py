@@ -20,6 +20,15 @@ class ReleaseVersionTests(unittest.TestCase):
             destination = self.root / name
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes((version.ROOT / name).read_bytes())
+        # Exercise Windows' legacy default even when tests run on a UTF-8 host.
+        original_read_text = Path.read_text
+
+        def windows_read_text(path, encoding=None, errors=None, **kwargs):
+            return original_read_text(path, encoding=encoding or "cp1252", errors=errors, **kwargs)
+
+        self.windows_encoding = patch.object(Path, "read_text", windows_read_text)
+        self.windows_encoding.start()
+        self.addCleanup(self.windows_encoding.stop)
 
     def snapshot(self):
         return {name: (self.root / name).read_bytes() for name in version.FILES}
@@ -36,8 +45,8 @@ class ReleaseVersionTests(unittest.TestCase):
         current, target, originals, updates = version.prepare(self.root, "patch")
         before = tomllib.loads(originals["Cargo.lock"].decode())["package"]
         version.apply(self.root, originals, updates)
-        self.assertEqual(tomllib.loads((self.root / "Cargo.toml").read_text())["package"]["version"], target)
-        after = tomllib.loads((self.root / "Cargo.lock").read_text())["package"]
+        self.assertEqual(tomllib.loads((self.root / "Cargo.toml").read_text(encoding="utf-8"))["package"]["version"], target)
+        after = tomllib.loads((self.root / "Cargo.lock").read_text(encoding="utf-8"))["package"]
         self.assertEqual([p for p in before if p["name"] != "echo"], [p for p in after if p["name"] != "echo"])
         self.assertEqual(next(p for p in after if p["name"] == "echo")["version"], target)
         plist = plistlib.loads((self.root / "packaging/Info.plist").read_bytes())
@@ -45,8 +54,8 @@ class ReleaseVersionTests(unittest.TestCase):
         self.assertEqual(plist["CFBundleShortVersionString"], target)
         identity = ET.parse(self.root / "packaging/windows/Echo.manifest").getroot()[0]
         self.assertEqual(identity.get("version"), target + ".0")
-        self.assertNotIn(f"/v{current}/Echo-", (self.root / "README.md").read_text())
-        self.assertIn(f"/v{target}/Echo-{target}-", (self.root / "README.md").read_text())
+        self.assertNotIn(f"/v{current}/Echo-", (self.root / "README.md").read_text(encoding="utf-8"))
+        self.assertIn(f"/v{target}/Echo-{target}-", (self.root / "README.md").read_text(encoding="utf-8"))
         self.assertEqual(version.prepare(self.root)[0], target)
 
     def test_preview_and_consistency_check_do_not_write_files(self):
