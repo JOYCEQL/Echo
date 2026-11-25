@@ -20,6 +20,30 @@ macOS 和 Windows 在发现新版后才会在侧栏设置图标上方显示更�
 成功启动请求后清理暂存目录；安装后的错误记录在 `.echo-update-*/install.log`。
 `open` 成功仅表示 Launch Services 接受启动请求，不等于新版健康检查通过。
 
+## 自动递增发版版本
+
+在 GitHub 仓库的 **Actions → Prepare release → Run workflow** 中选择 `main`，然后选择递增方式：
+
+- `patch`（默认）：`0.0.1 → 0.0.2`。
+- `minor`：`0.0.1 → 0.1.0`，补丁号归零。
+- `major`：`0.0.1 → 1.0.0`，次版本号和补丁号归零。
+
+工作流会检查版本一致性，自动计算新版本，同步 `Cargo.toml`、`Cargo.lock`、Mac 的 `Info.plist`、Windows manifest 和 README 下载链接，再以 `chore(release): bump version to X.Y.Z` 提交到 `main`，并创建 `vX.Y.Z` tag。提交和 tag 一起推送；推送遇到冲突时会失败，不覆盖远端改动。运行工作流的 token 需要仓库内容写入权限，仓库分支规则也须允许该自动提交。
+
+每次发版只运行一次 **Prepare release**。准备完成后，本地执行 `git pull --ff-only` 获取新版本；Mac 与 Windows 都从生成的同一个 tag 构建。现有 `release.sh`、`release-windows.ps1` 和普通构建脚本读取已准备好的版本，不重复递增，因此重试构建或更换平台不会额外增加版本号。
+
+此工作流准备版本和 tag，不上传安装包或发布 GitHub Release。由 `GITHUB_TOKEN` 推送的提交与 tag 不会自动触发普通 `push` CI；准备好版本后，可手动运行 **Windows** 工作流并选择相应 tag，获取 Windows 构建产物。
+
+本地也可以用 Python 3.11 或更新版本自动同步版本（本地脚本只更新文件，不自动提交或创建 tag）：
+
+```sh
+python3 scripts/bump_version.py                 # 自动递增 patch
+python3 scripts/bump_version.py --part minor    # 自动递增 minor
+python3 scripts/bump_version.py --part major    # 自动递增 major
+python3 scripts/bump_version.py --dry-run       # 预览下一个版本，不修改文件
+python3 scripts/bump_version.py --check         # 只检查当前各处版本是否一致
+```
+
 ## 发行前提
 
 1. 准备一个公开的 GitHub Releases 仓库，源代码仓库可保持私有。

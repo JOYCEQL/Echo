@@ -100,6 +100,8 @@ cargo run --locked
 
 运行测试使用 `cargo test --locked`。
 
+发版时，在 GitHub Actions 中运行 **Prepare release**（分支选择 `main`），默认自动递增补丁号，例如 `0.0.1 → 0.0.2`，同步各平台版本和下载链接，并提交、创建版本 tag。Mac 与 Windows 使用同一个 tag 打包。详见[自动递增发版版本](./packaging/UPDATES.md#自动递增发版版本)。
+
 ## 开源协议
 
 Copyright (C) 2026 Echo contributors.
@@ -123,5 +125,5 @@ Echo 的原创代码采用 **GNU Affero General Public License v3.0（AGPL-3.0-o
   <a href="https://github.com/JOYCEQL/Echo/releases">历史版本</a>
 </p>
 
-<!-- 发布维护：迁移时统一替换顶部下载按钮与下方的发布仓库地址。每次发版同步更新下载链接中的 tag 和附件版本；首次公开上传并验证两个安装包后移除页首的准备中提示。 -->
+<!-- 发布维护：迁移时统一替换顶部下载按钮与下方的发布仓库地址。Prepare release 自动同步下载链接中的 tag 和附件版本；发布前确认对应安装包已上传。 -->
 [releases]: https://github.com/JOYCEQL/Echo/releases
