@@ -3,13 +3,13 @@ use crate::table_data;
 use rune::{Env, Key, KeyEvent, Mods, Runtime};
 
 #[test]
-fn update_settings_render_states_in_both_languages_and_persist_opt_in() {
+fn update_settings_render_states_in_both_languages_and_persist_automatic_choice() {
     use crate::update::Status;
     for english in [false, true] {
         for dark in [false, true] {
             let f = Fixture::new();
             let mut s = State::from_root(f.0.clone());
-            assert!(!s.updater.automatic);
+            assert!(s.updater.automatic);
             s.language = if english { crate::i18n::Language::English } else { crate::i18n::Language::Chinese };
             s.sidebar_material.mode = if dark { crate::material::LookMode::Dark } else { crate::material::LookMode::Light };
             let mut rt = runtime(s, (1000., 736.));
@@ -20,11 +20,11 @@ fn update_settings_render_states_in_both_languages_and_persist_opt_in() {
             rt.frame(0.02);
             assert!(rt.find("update-action").is_some());
             tap(&mut rt, "update-automatic");
-            assert!(rt.state.updater.automatic);
-            assert_eq!(rt.state.store.preference("automatic_updates").as_deref(), Some("true"));
-            tap(&mut rt, "update-automatic");
             assert!(!rt.state.updater.automatic);
             assert_eq!(rt.state.store.preference("automatic_updates").as_deref(), Some("false"));
+            tap(&mut rt, "update-automatic");
+            assert!(rt.state.updater.automatic);
+            assert_eq!(rt.state.store.preference("automatic_updates").as_deref(), Some("true"));
             for status in [Status::Checking, Status::Downloading(47), Status::Verifying, Status::Preparing, Status::Installing, Status::Unavailable] {
                 rt.update(move |s, tx| { s.updater.status = status; tx.instant(); });
                 rt.frame(0.02);
@@ -35,8 +35,12 @@ fn update_settings_render_states_in_both_languages_and_persist_opt_in() {
                 rt.frame(0.02);
                 assert!(rt.find("update-action").is_some());
             }
+            tap(&mut rt, "update-automatic");
+            assert!(!rt.state.updater.automatic);
             press(&mut rt, Key::Escape);
             assert!(rt.state.settings.is_none());
+            drop(rt);
+            assert!(!State::from_root(f.0.clone()).updater.automatic);
         }
     }
 }

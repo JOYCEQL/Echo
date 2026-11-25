@@ -305,7 +305,7 @@ impl State {
             renaming: None,
             name_input: TextEdit::new(""),
             book_names,
-            updater: crate::update::Updater::new(store.preference("automatic_updates").as_deref() == Some("true")),
+            updater: crate::update::Updater::new(store.preference("automatic_updates").as_deref().unwrap_or("true") == "true"),
             store,
             notes,
             current,
