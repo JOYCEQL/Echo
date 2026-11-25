@@ -4102,7 +4102,7 @@ fn notebook_icon_style_switches_in_both_modes_and_persists_without_changing_note
     use crate::notebook_icons::Style;
     let f = Fixture::new();
     let mut state = State::from_root(f.0.clone());
-    assert_eq!(state.notebook_icon_style, Style::Solid);
+    assert_eq!(state.notebook_icon_style, Style::Pals);
     assert_eq!(state.sidebar_material.colors, crate::material::PAPER_COLORS.map(crate::material::Tint::from_hex));
     assert_eq!(crate::ui::page_surface(&state), 0xffffff);
     state.choose_mode(WorkspaceMode::Document);

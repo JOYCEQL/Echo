@@ -3,7 +3,7 @@ use rune::{El, Icon, icon};
 use crate::{doc_core::NoteFormat, icons::{FILE_TEXT, LAYOUT_GRID, ico}, model::State, ui::{c, theme_ink}};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum Style { #[default] Solid, Pals, Color, Ink, Journal, Monochrome }
+pub enum Style { Solid, #[default] Pals, Color, Ink, Journal, Monochrome }
 
 impl Style {
     pub fn key(self) -> &'static str {
@@ -30,7 +30,8 @@ impl Style {
 
     pub fn from_preference(value: Option<&str>) -> Self {
         match value {
-            None | Some("solid") => Self::Solid,
+            None => Self::Pals,
+            Some("solid") => Self::Solid,
             Some("paper" | "pals") => Self::Pals,
             Some("color") => Self::Color,
             Some("ink") => Self::Ink,
