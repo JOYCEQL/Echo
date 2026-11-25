@@ -1,0 +1,231 @@
+--- a/crates/rune/src/edit/display.rs
++++ b/crates/rune/src/edit/display.rs
+@@ -66,7 +66,7 @@
+                     spans.push(Span {
+                         start: r_start,
+                         end: r_end,
+-                        weight: Some((base_style.weight + 250.0).clamp(600.0, 900.0)),
++                        weight: Some((base_style.weight + 100.0).clamp(500.0, 600.0)),
+                         ..Span::default()
+                     });
+                 }
+@@ -165,6 +165,13 @@
+             });
+         }
+ 
++        let mut start=0;for (index,line) in disp_text.split_inclusive('\n').enumerate(){
++            if let Some(Block::Heading(level))=display_blocks.get(index){
++                if !line.is_empty(){spans.push(Span::new(start,start+line.len()).weight(if *level<=2{600.}else{500.}).size(match level{1=>28.,2=>24.,3=>20.,_=>18.}));}
++            }
++            if let Some(Block::Task(_,true))=display_blocks.get(index){if !line.is_empty(){strikes.push((start as u32,(start+line.trim_end_matches('\n').len())as u32,None));}}
++            start+=line.len();
++        }
+         (spans, strikes, links, display_blocks)
+     }
+ 
+--- a/crates/rune/src/edit/html.rs
++++ b/crates/rune/src/edit/html.rs
+@@ -494,8 +494,9 @@
+                             in_pre,
+                         );
+                     }
++                    "input" if attrs.contains("checkbox") => {if let Some(last)=blocks.last_mut(){let level=extract_attr(attrs,"data-level").and_then(|x|x.parse::<u8>().ok()).unwrap_or_else(||last.list_level().unwrap_or(0));*last=Block::Task(level,attrs.contains("checked"));}},
+                     "p" | "div" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {
+-                        let blk = current_default_block(&list_stack, in_pre, in_quote, in_li);
++                        let blk = if tag.starts_with('h'){Block::Heading(tag[1..].parse().unwrap_or(1))}else{current_default_block(&list_stack, in_pre, in_quote, in_li)};
+                         start_new_paragraph(
+                             &mut text,
+                             &mut blocks,
+@@ -514,7 +515,7 @@
+                 let mut to_add = Vec::new();
+                 let mut to_suppress = Vec::new();
+                 match tag.as_str() {
+-                    "b" | "strong" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => to_add.push(Mark::Bold),
++                    "b" | "strong" => to_add.push(Mark::Bold),
+                     "i" | "em" => to_add.push(Mark::Italic),
+                     "u" | "ins" => to_add.push(Mark::Underline),
+                     "s" | "del" | "strike" => to_add.push(Mark::Strike),
+@@ -802,6 +803,8 @@
+     while idx < paras.len() {
+         let (_, _, block, _) = paras[idx];
+         match block {
++            Block::Heading(level) => {out.push_str(&format!("<h{level}>"));serialize_inline(edit,paras[idx].1.clone(),&mut out);out.push_str(&format!("</h{level}>"));idx+=1;},
++            Block::Task(level,checked) => {out.push_str(&format!("<ul><li data-level=\"{level}\"><input type=\"checkbox\" data-level=\"{level}\" {} />",if checked{"checked=\"\""}else{""}));serialize_inline(edit,paras[idx].1.clone(),&mut out);out.push_str("</li></ul>");idx+=1;},
+             Block::Code => {
+                 out.push_str("<pre><code>");
+                 let mut first = true;
+--- a/crates/rune/src/edit/input.rs
++++ b/crates/rune/src/edit/input.rs
+@@ -127,6 +127,8 @@
+                                     self.insert_newline(Block::Code, false);
+                                 }
+                             }
++                            Block::Heading(_) => {self.insert_newline(Block::Paragraph,false);}
++                            Block::Task(level,_) => {if a==b && line_range.is_empty(){self.set_block(Block::Paragraph);}else{self.insert_newline(Block::Task(level,false),false);}}
+                             Block::Bullet(_) | Block::Numbered(_) => {
+                                 // Return in an empty list item ends the list; otherwise continues it.
+                                 if a == b && line_range.is_empty() {
+@@ -173,14 +175,14 @@
+                     let is_soft = self.soft_breaks.binary_search(&(line_idx as u32)).is_ok();
+                     if !line && !word && a == line_range.start && !is_soft && blk != Block::Paragraph {
+                         match blk {
+-                            Block::Bullet(lvl) | Block::Numbered(lvl) => {
++                            Block::Bullet(lvl) | Block::Numbered(lvl) | Block::Task(lvl,_) => {
+                                 if lvl > 0 {
+                                     self.set_block(blk.with_level(lvl - 1));
+                                 } else {
+                                     self.set_block(Block::Paragraph);
+                                 }
+                             }
+-                            Block::Quote | Block::Code => {
++                            Block::Quote | Block::Code | Block::Heading(_) => {
+                                 if a == 0 || line_range.is_empty() {
+                                     self.set_block(Block::Paragraph);
+                                 } else {
+--- a/crates/rune/src/edit/model.rs
++++ b/crates/rune/src/edit/model.rs
+@@ -97,6 +97,10 @@
+ pub enum Block {
+     #[default]
+     Paragraph,
++    /// A directly editable Markdown heading.
++    Heading(u8),
++    /// A task-list paragraph, with nesting level and checked state.
++    Task(u8, bool),
+     /// Bullet list item (`•`, `◦`, `▪`) at nesting level `0..=MAX_LIST_LEVEL`.
+     Bullet(u8),
+     /// Numbered list item (`1.`, `2.`, …) at nesting level `0..=MAX_LIST_LEVEL`.
+@@ -109,12 +113,12 @@
+ 
+ impl Block {
+     pub fn is_list(self) -> bool {
+-        matches!(self, Block::Bullet(_) | Block::Numbered(_))
++        matches!(self, Block::Bullet(_) | Block::Numbered(_) | Block::Task(_, _))
+     }
+ 
+     pub fn list_level(self) -> Option<u8> {
+         match self {
+-            Block::Bullet(l) | Block::Numbered(l) => Some(l),
++            Block::Bullet(l) | Block::Numbered(l) | Block::Task(l, _) => Some(l),
+             _ => None,
+         }
+     }
+@@ -124,6 +128,7 @@
+         match self {
+             Block::Bullet(_) => Block::Bullet(l),
+             Block::Numbered(_) => Block::Numbered(l),
++            Block::Task(_, done) => Block::Task(l,done),
+             other => other,
+         }
+     }
+@@ -137,6 +142,8 @@
+                 | (Block::Numbered(_), Block::Numbered(_))
+                 | (Block::Quote, Block::Quote)
+                 | (Block::Code, Block::Code)
++                | (Block::Heading(_), Block::Heading(_))
++                | (Block::Task(_, _), Block::Task(_, _))
+         )
+     }
+ 
+@@ -148,6 +155,8 @@
+             Block::Numbered(_) => 2,
+             Block::Quote => 3,
+             Block::Code => 4,
++            Block::Heading(_) => 5,
++            Block::Task(_,_) => 6,
+         }
+     }
+ 
+@@ -155,8 +164,8 @@
+     pub(crate) fn indent_pt(self, font_size: f32) -> f32 {
+         let unit = (font_size * 1.45).round().max(18.0);
+         match self {
+-            Block::Paragraph => 0.0,
+-            Block::Bullet(l) | Block::Numbered(l) => unit * (l.min(MAX_LIST_LEVEL) as f32 + 1.0),
++            Block::Paragraph | Block::Heading(_) => 0.0,
++            Block::Bullet(l) | Block::Numbered(l) | Block::Task(l, _) => unit * (l.min(MAX_LIST_LEVEL) as f32 + 1.0),
+             Block::Quote => (font_size * 1.1).round().max(14.0),
+             Block::Code => (font_size * 0.75).round().max(10.0),
+         }
+--- a/crates/rune/src/edit/task-check.svg
++++ b/crates/rune/src/edit/task-check.svg
+@@ -0,0 +1 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>--- a/crates/rune/src/runtime/paint/helpers.rs
++++ b/crates/rune/src/runtime/paint/helpers.rs
+@@ -92,7 +92,7 @@
+ 
+         if first_line_of_para {
+             match blk {
+-                Block::Bullet(lvl) => {
++                Block::Bullet(lvl) | Block::Task(lvl,_) => {
+                     let l = (lvl.min(MAX_LIST_LEVEL)) as usize;
+                     for c in &mut list_counts[l + 1..] {
+                         *c = 0;
+@@ -114,7 +114,7 @@
+                         markers.push((indent, baseline, blk, list_counts[l]));
+                     }
+                 }
+-                Block::Paragraph | Block::Quote | Block::Code => {
++                Block::Paragraph | Block::Heading(_) | Block::Quote | Block::Code => {
+                     if !is_soft {
+                         list_counts = [0; (MAX_LIST_LEVEL as usize) + 1];
+                     }
+@@ -139,7 +139,7 @@
+         match blk {
+             Block::Code => code_run = Some((top, bot)),
+             Block::Quote => quote_run = Some((top, bot)),
+-            Block::Bullet(_) => {
++            Block::Bullet(_) | Block::Task(_,_) => {
+                 let indent = (blk.indent_pt(spec.style.size) * s).round();
+                 markers.push((indent, baseline, blk, 0));
+             }
+@@ -147,7 +147,7 @@
+                 let indent = (blk.indent_pt(spec.style.size) * s).round();
+                 markers.push((indent, baseline, blk, 1));
+             }
+-            Block::Paragraph => {}
++            Block::Paragraph | Block::Heading(_) => {}
+         }
+     }
+ 
+@@ -167,6 +167,14 @@
+                     let radius = if lvl >= 2 { 1.0 * s * tk } else { d * 0.5 };
+                     let c = if lvl == 1 { premul(marker_color.alpha(marker_color.a * 0.65), o, srgb) } else { mc };
+                     instances.push(rect_inst([cx + glide[0], cy + glide[1], d, d], c, radius, clip, fade));
++                }
++                Block::Task(_,done) => {
++                    let side=16.0*s*tk;let x=origin[0]+indent_px*tk-side-7.0*s*tk+glide[0];let y=baseline_y-0.78*spec.style.size*s*tk+glide[1];
++                    instances.push(rect_inst([x,y,side,side],mc,3.0*s*tk,clip,fade));
++                    if !done{let edge=1.1*s*tk;instances.push(rect_inst([x+edge,y+edge,side-2.0*edge,side-2.0*edge],premul(Color::WHITE.alpha(0.95),o,srgb),2.0*s*tk,clip,fade));}
++                    else {static CHECK:crate::Icon=crate::Icon{name:"noteflow-task-check",view:24.0,body:include_str!("../../edit/task-check.svg")};
++                        if let Some(q)=text_sys.icon_quad(&CHECK,(side*0.9).round() as u32,[x+side*0.05,y+side*0.05]){instances.extend(glyph_or_image(&q,text_sys,images,premul(Color::WHITE,o,srgb),clip,fade));}
++                    }
+                 }
+                 Block::Numbered(_) => {
+                     let label = format!("{num}.");
+--- a/crates/rune/src/runtime/selection/click.rs
++++ b/crates/rune/src/runtime/selection/click.rs
+@@ -211,6 +211,8 @@
+             self.input_click.drop_drag();
+             return false;
+         };
++        let font_size=self.node(&path).and_then(|n|n.text.as_ref()).map_or(19.2,|t|t.style.size);
++        let changed=self.node(&path).and_then(|n|n.input.as_ref()?.change.clone());
+         let single = self.node(&path).and_then(|n| n.input.as_ref()).is_some_and(|i| i.single_line);
+         let layout = self.node(&path).and_then(|n| n.text_layout.clone());
+         let s = self.env.scale;
+@@ -229,6 +231,14 @@
+                 }
+                 if let Some(l) = layout {
+                     let h = hit(e, &l, x + scroll, y, s, single);
++                    let para=e.text[..h.caret.min(e.text.len())].bytes().filter(|b|*b==b'\n').count();
++                    if let Some(crate::Block::Task(level,done))=e.blocks().get(para).copied(){
++                        let indent=crate::Block::Task(level,done).indent_pt(font_size);
++                        if x>=0.0&&x<indent-2.0{
++                            let old=(e.anchor,e.focus);e.set_caret(h.caret);e.set_block(crate::Block::Task(level,!done));e.set_selection(old.0,old.1);
++                            if let Some(changed)=changed{changed(states!(self),one);}one.instant=true;return true;
++                        }
++                    }
+                     if shift {
+                         let anchor = e.anchor;
+                         self.input_click.unit = Unit::Char;

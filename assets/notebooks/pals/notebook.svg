@@ -1,0 +1,9 @@
+<g transform="rotate(-6 16 16)">
+  <rect x="5.1" y="3.8" width="22.2" height="24.7" rx="6" fill="#AAAEEF" stroke="#7176AD" stroke-width="1.1"/>
+  <path d="M19.2 4h4.2v6.7l-2.1-1.4-2.1 1.4Z" fill="#595C91"/>
+  <path d="M10 25.1h13.6" fill="none" stroke="#E8E9FF" stroke-width="1.8" stroke-linecap="round"/>
+  <g fill="#302E49">
+    <rect x="10.8" y="12.3" width="3.1" height="6.5" rx="1.55"/>
+    <rect x="17.7" y="12.3" width="3.1" height="6.5" rx="1.55"/>
+  </g>
+</g>

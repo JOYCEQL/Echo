@@ -1,0 +1,30 @@
+name: Verify published Windows update
+on:
+  workflow_dispatch:
+    inputs:
+      release_commit:
+        description: Full commit SHA used to build the release
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  upgrade:
+    runs-on: windows-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: tools
+          sparse-checkout: scripts
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_commit }}
+          path: candidate
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: candidate
+      - name: Exercise the updater against the public release
+        working-directory: candidate
+        shell: pwsh
+        run: ../tools/scripts/test-published-windows.ps1

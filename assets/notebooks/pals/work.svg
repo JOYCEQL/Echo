@@ -1,0 +1,6 @@
+<path d="M10 11V8a5 5 0 0 1 5-5h3a5 5 0 0 1 5 5v3" fill="none" stroke="#395582" stroke-width="3.2"/>
+<path d="M4.4 12.2c1-3 4-4.4 8.3-4.6l7-.4c5.2-.3 8.1 1.9 8.9 6.2l.9 6.3c.8 5.3-2.5 8.5-7.3 9l-10.4.7c-5.9.4-8.9-2.8-8.7-7.9.1-3.7.5-6.8 1.3-9.3Z" fill="#85B6EE" stroke="#486B99" stroke-width="1.1"/>
+<g transform="rotate(-5 16 17)" fill="#212938">
+  <rect x="12.8" y="13.3" width="3.3" height="7" rx="1.65"/>
+  <rect x="20.1" y="13.3" width="3.3" height="7" rx="1.65"/>
+</g>

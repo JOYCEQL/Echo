@@ -1,0 +1,11 @@
+<path d="M4.2 18c.4-7.2 4.8-11.6 12.2-11.4 7.4.2 11.7 4.5 12.1 11.4.4 7.8-3.9 11.2-12.1 11.2C8 29.2 3.8 25.6 4.2 18Z" fill="#9CDACD" stroke="#629E97" stroke-width="1.1"/>
+<path d="M3 8.2 15.7 3l13.5 4.2-12.6 5.1Z" fill="#375A62"/>
+<path d="M27.3 8.4v5.7" fill="none" stroke="#375A62" stroke-linecap="round" stroke-width="2.2"/>
+<g fill="none" stroke="#305357" stroke-width="1.35">
+  <circle cx="10.9" cy="18.5" r="4.3"/><circle cx="21.2" cy="18.5" r="4.3"/>
+  <path d="M15.1 18.4q.9-.9 1.9 0"/>
+</g>
+<g fill="#203538">
+  <rect x="9.7" y="16.3" width="2.5" height="4.5" rx="1.25"/>
+  <rect x="20" y="16.3" width="2.5" height="4.5" rx="1.25"/>
+</g>

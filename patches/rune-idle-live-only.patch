@@ -1,0 +1,14 @@
+diff --git a/vendor/rune/crates/rune/src/runtime/motion/live_latch.rs b/vendor/rune/crates/rune/src/runtime/motion/live_latch.rs
+index 0e6019c..0942ed7 100644
+--- a/vendor/rune/crates/rune/src/runtime/motion/live_latch.rs
++++ b/vendor/rune/crates/rune/src/runtime/motion/live_latch.rs
+@@ -67,5 +67,8 @@ impl<S: 'static> Runtime<S> {
+     pub(super) fn latch_live(&mut self, pending: bool) -> bool {
+-        if !self.surface_visible || self.live_subscriptions.is_empty() { return false; }
++        if !self.surface_visible { return false; }
+         if !pending && !self.live_dirty { return false; }
++        // A live-only layout/input handler also marks this dirty when no Live values
++        // are bound. Consume that request so the native host can return to idle.
+         self.live_dirty = false;
++        if self.live_subscriptions.is_empty() { return false; }
+         for node in &mut self.nodes {

@@ -1,0 +1,5 @@
+<defs><linearGradient id="coral" x1="7" y1="5" x2="27" y2="29" gradientUnits="userSpaceOnUse"><stop stop-color="#FFAA99"/><stop offset=".65" stop-color="#FF9482"/><stop offset="1" stop-color="#FA8B78"/></linearGradient></defs>
+<rect x="6" y="3" width="23" height="27" rx="5.2" fill="url(#coral)"/>
+<path d="M10.5 3.6h12.4" fill="none" stroke="#FFD8CF" stroke-opacity=".5" stroke-width=".8" stroke-linecap="round"/>
+<path d="M5.1 10h6.4M5.1 16h6.4M5.1 22h6.4" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>
+<path d="M7.2 6.5v2M7.2 11.5v3M7.2 17.5v3M7.2 23.5v2.8" fill="none" stroke="#FFCABD" stroke-opacity=".35" stroke-width=".7"/>

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="208" height="54" viewBox="0 0 208 54" fill="none" role="img" aria-label="下载 Windows 版 (x64)">
+  <defs>
+    <linearGradient id="pillSurface" x1="104" y1="2" x2="104" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFDF9"/>
+      <stop offset="100%" stop-color="#F7EFE4"/>
+    </linearGradient>
+    <linearGradient id="winBadge" x1="12" y1="10" x2="44" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#48A8FF"/>
+      <stop offset="100%" stop-color="#1772E0"/>
+    </linearGradient>
+  </defs>
+  <!-- Tactile bottom bevel -->
+  <rect x="2" y="4.5" width="204" height="48" rx="24" fill="#DAC6B2"/>
+  <!-- Main pill body -->
+  <rect x="2" y="2" width="204" height="48" rx="24" fill="url(#pillSurface)" stroke="#DFCBB6" stroke-width="1.2"/>
+  <!-- Subtle inner top highlight -->
+  <rect x="3.2" y="3.2" width="201.6" height="45.6" rx="22.8" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="1"/>
+  <!-- Left circular platform emblem -->
+  <circle cx="28" cy="26" r="16" fill="url(#winBadge)"/>
+  <circle cx="28" cy="26" r="15.3" stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="1"/>
+  <!-- Windows 11 glyph -->
+  <g transform="translate(20.3, 18.3)" fill="#FFFFFF">
+    <rect x="0" y="0" width="6.8" height="6.8" rx="1.4"/>
+    <rect x="8.6" y="0" width="6.8" height="6.8" rx="1.4"/>
+    <rect x="0" y="8.6" width="6.8" height="6.8" rx="1.4"/>
+    <rect x="8.6" y="8.6" width="6.8" height="6.8" rx="1.4"/>
+  </g>
+  <!-- Title & subtitle -->
+  <text x="54" y="24.5" fill="#2E1C11" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="700" letter-spacing="-0.2">Windows</text>
+  <text x="54" y="39.5" fill="#846E5C" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="10.5" font-weight="500">x64 安装包</text>
+  <!-- Right circular download indicator -->
+  <circle cx="180" cy="26" r="12" fill="#1772E0" fill-opacity="0.10"/>
+  <path d="M180 21.4V28.1M180 28.1L177.2 25.4M180 28.1L182.8 25.4M176.2 30.3H183.8" stroke="#1569D2" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

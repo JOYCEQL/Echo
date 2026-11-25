@@ -1,0 +1,6 @@
+https://github.com/anomalyco/rune
+dev dece2aff3a254ffd6f6a0a49baa82b75664b3190
+Source snapshot downloaded 2026-11-09.
+
+NoteFlow local changes: Heading/Task paragraph semantics and live editing support.
+Applied patch: ../../patches/live-markdown.patch (relative to this directory).
