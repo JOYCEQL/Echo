@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/storage-Local%20Markdown-green" height="20" alt="本地 Markdown 存储">
 </p>
 
-<p align="center"><a href="https://github.com/JOYCEQL/Echo/releases/download/v0.0.1/Echo-0.0.1-macos-arm64.zip"><img src="docs/images/get-macos.svg" width="208" height="54" alt="下载 macOS 版"></a>&nbsp;&nbsp;&nbsp;<a href="https://github.com/JOYCEQL/Echo/releases/download/v0.0.1/Echo-0.0.1-windows-x64-setup.exe"><img src="docs/images/get-windows.svg" width="208" height="54" alt="下载 Windows 版"></a></p>
+<p align="center"><a href="https://github.com/JOYCEQL/Echo/releases/download/v0.0.2/Echo-0.0.2-macos-arm64.zip"><img src="docs/images/get-macos.svg" width="208" height="54" alt="下载 macOS 版"></a>&nbsp;&nbsp;&nbsp;<a href="https://github.com/JOYCEQL/Echo/releases/download/v0.0.2/Echo-0.0.2-windows-x64-setup.exe"><img src="docs/images/get-windows.svg" width="208" height="54" alt="下载 Windows 版"></a></p>
 
 <p align="center">
   <a href="#安装说明"><b>下载</b></a> ·
