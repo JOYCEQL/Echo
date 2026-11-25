@@ -1,0 +1,50 @@
+name: macOS
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-15
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '13.0'
+      CARGO_BUILD_JOBS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check shared release version and version tooling
+        run: |
+          python3 scripts/bump_version.py --check
+          python3 -m unittest discover -s scripts -p 'test_bump_version.py'
+      - name: Install Rust toolchain
+        run: |
+          rustup show
+          test "$(uname -m)" = arm64
+      - uses: Swatinem/rust-cache@v2
+      - name: Test
+        run: cargo test --locked -- --test-threads=1
+      - name: Configure the official update source for release candidates
+        if: github.repository == 'JOYCEQL/Echo' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name != 'pull_request'
+        run: |
+          python3 - <<'PY'
+          import base64, os, pathlib
+          key = pathlib.Path('packaging/echo-update.pub').read_text(encoding='utf-8').splitlines()[1]
+          assert len(base64.b64decode(key, validate=True)) == 42
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as env:
+              env.write(f'ECHO_UPDATE_PUBLIC_KEY={key}\n')
+              env.write(f'ECHO_UPDATE_REPOSITORY={os.environ["GITHUB_SERVER_URL"]}/{os.environ["GITHUB_REPOSITORY"]}\n')
+          PY
+      - name: Build and verify macOS app ZIP
+        run: bash scripts/build-macos.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Echo-macos-arm64
+          path: |
+            dist/Echo-*-macos-arm64.zip
+            dist/Echo-*-macos-arm64.zip.sha256
+          if-no-files-found: error

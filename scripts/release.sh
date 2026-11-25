@@ -39,25 +39,10 @@ case "$echo_target" in
   x86_64-apple-darwin) echo_arch=x86_64 ;;
   *) echo 'Build releases on the target macOS architecture' >&2; exit 1 ;;
 esac
-export MACOSX_DEPLOYMENT_TARGET=13.0
-cargo build --release --locked
-mkdir -p dist
-echo_output=$(mktemp -d "$PWD/dist/release-$echo_version-$echo_arch.XXXXXX")
-echo_app="$echo_output/Echo.app"
-mkdir -p "$echo_app/Contents/MacOS" "$echo_app/Contents/Resources"
-cp target/release/echo "$echo_app/Contents/MacOS/Echo"
-cp packaging/Info.plist "$echo_app/Contents/Info.plist"
-cp packaging/Echo.icns "$echo_app/Contents/Resources/Echo.icns"
-cp LICENSE THIRD_PARTY.md "$echo_app/Contents/Resources/"
-cp -R licenses "$echo_app/Contents/Resources/"
-/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $echo_version" "$echo_app/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $echo_version" "$echo_app/Contents/Info.plist"
-lipo "$echo_app/Contents/MacOS/Echo" -verify_arch "$echo_arch"
-codesign --force --sign - "$echo_app"
-codesign --verify --deep --strict "$echo_app"
+bash scripts/build-macos.sh
+echo_output="$PWD/dist"
 echo_name="Echo-$echo_version-macos-$echo_arch.zip"
 echo_package="$echo_output/$echo_name"
-ditto -c -k --keepParent "$echo_app" "$echo_package"
 minisign -S -s "$MINISIGN_SECRET_KEY" -m "$echo_package" -t "$echo_name"
 minisign -V -p "$ECHO_UPDATE_KEY_FILE" -m "$echo_package"
 python3 - "$echo_package" "$echo_version" "macos-$echo_arch" <<'PY'

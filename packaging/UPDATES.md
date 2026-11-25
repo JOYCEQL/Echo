@@ -32,7 +32,7 @@ macOS 和 Windows 在发现新版后才会在侧栏设置图标上方显示更�
 
 每次发版只运行一次 **Prepare release**。准备完成后，本地执行 `git pull --ff-only` 获取新版本；Mac 与 Windows 都从生成的同一个 tag 构建。现有 `release.sh`、`release-windows.ps1` 和普通构建脚本读取已准备好的版本，不重复递增，因此重试构建或更换平台不会额外增加版本号。
 
-此工作流准备版本和 tag，不上传安装包或发布 GitHub Release。由 `GITHUB_TOKEN` 推送的提交与 tag 不会自动触发普通 `push` CI；准备好版本后，可手动运行 **Windows** 工作流并选择相应 tag，获取 Windows 构建产物。
+此工作流准备版本和 tag，不上传安装包或发布 GitHub Release。由 `GITHUB_TOKEN` 推送的提交与 tag 不会自动触发普通 `push` CI；准备好版本后，可分别手动运行 **macOS** 和 **Windows** 工作流并选择相应 tag，获取同一版本的构建产物。
 
 本地也可以用 Python 3.11 或更新版本自动同步版本（本地脚本只更新文件，不自动提交或创建 tag）：
 
@@ -69,6 +69,8 @@ bash scripts/release.sh
 公钥编译进二进制；签名失败、缺少密钥或公开发布源时立即终止。
 不提供跳过校验模式，不自动创建、上传或发布 GitHub Release。
 `scripts/bundle.sh` 仍用于本地 ad-hoc 开发包，不是发布脚本。
+
+`bash scripts/build-macos.sh` 生成 `dist/Echo-VERSION-macos-arm64.zip`（在 Intel Mac 上为 `macos-x86_64`）及 SHA-256 校验文件，并验证应用架构和 ad-hoc 代码签名。它不生成 Minisign 更新签名；正式发行时仍须使用 `release.sh` 或在发行机器上为相同 CI 产物签名并生成更新清单。**macOS** 工作流使用 Apple Silicon 构建机执行测试和此打包脚本，上传 `Echo-macos-arm64` artifact。
 
 ## 发行版的源码交付
 
@@ -136,4 +138,4 @@ Windows 无法删除仍在运行的 helper，因此其可执行文件与诊断�
 
 正式更新源是 `https://github.com/JOYCEQL/Echo`。首次安装使用 README 中的 macOS Apple Silicon ZIP 或 Windows x64 安装程序。仓库中的 `packaging/echo-update.pub` 是验证两个平台更新包的公钥。
 
-Windows 工作流会在官方仓库的 main 构建中嵌入公钥和更新源，并测试安装与卸载。发布时从与发布提交 SHA 一致的成功运行中下载 Windows 安装程序，在发行机器上签名。Minisign 的 trusted comment 使用安装程序的完整文件名。将安装程序、签名和包含版本、平台、字节数及完整签名的更新清单与 Mac 产物一起上传至同一个草稿。核对签名和清单后再公开，并以匿名下载验证 README 的两个链接和 latest 更新清单。
+macOS 和 Windows 工作流会在官方仓库的 main 或版本 tag 构建中嵌入同一公钥和更新源。Windows 工作流还会测试安装与卸载。发布时从与发布提交 SHA 一致的成功运行中下载两个平台的产物，在发行机器上签名。Minisign 的 trusted comment 使用对应 ZIP 或安装程序的完整文件名。将两个平台的安装包、签名和包含版本、平台、字节数及完整签名的更新清单一起上传至同一个草稿。核对签名和清单后再公开，并以匿名下载验证 README 的两个链接和 latest 更新清单。
