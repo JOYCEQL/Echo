@@ -3,11 +3,11 @@ macro_rules! platform_text {
     ($mac:literal, $windows:literal) => { if cfg!(target_os = "windows") { $windows } else { $mac } };
 }
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum Language { #[default] Chinese, English }
+pub enum Language { Chinese, #[default] English }
 impl Language {
     pub fn key(self) -> &'static str { match self { Self::Chinese => "zh-CN", Self::English => "en" } }
     pub fn from_preference(value: Option<&str>) -> Self {
-        match value { None | Some("zh-CN") => Self::Chinese, Some("en") => Self::English,
+        match value { Some("zh-CN") => Self::Chinese, None | Some("en") => Self::English,
             Some(value) => panic!("unsupported saved UI language: {value}"), }
     }
     pub fn text(self, key: &str) -> &'static str {

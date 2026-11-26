@@ -29,16 +29,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Test
         run: cargo test --locked -- --test-threads=1
-      - name: Configure the official update source for release candidates
-        if: github.repository == 'JOYCEQL/Echo' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name != 'pull_request'
-        run: |
-          python3 - <<'PY'
-          import base64, os, pathlib
-          key = pathlib.Path('packaging/echo-update.pub').read_text(encoding='utf-8').splitlines()[1]
-          assert len(base64.b64decode(key, validate=True)) == 42
-          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as env:
-              env.write(f'ECHO_UPDATE_PUBLIC_KEY={key}\n')
-          PY
       - name: Build and verify macOS app ZIP
         run: bash scripts/build-macos.sh
       - name: Build Intel release packages

@@ -18,6 +18,20 @@ pub fn wide(value: &OsStr) -> Vec<u16> {
 pub fn data_root() -> PathBuf {
     PathBuf::from(std::env::var_os("LOCALAPPDATA").expect("LOCALAPPDATA must be set")).join("Echo")
 }
+/// All launches for the same library share a window, including launches through shortcuts.
+pub fn claim_library_window() -> std::io::Result<bool> {
+    use sha2::{Digest, Sha256};
+
+    let root = crate::storage::data_root();
+    std::fs::create_dir_all(&root)?;
+    let path = std::fs::canonicalize(root)?;
+    let mut hash = Sha256::new();
+    for unit in path.as_os_str().encode_wide() {
+        hash.update(unit.to_le_bytes());
+    }
+    Ok(rune::single_instance(&format!("art.magicv.echo.{:x}", hash.finalize())))
+}
+
 pub fn open_folder(path: &Path) -> Result<(), String> {
     let path = wide(path.as_os_str());
     let verb = wide(OsStr::new("open"));

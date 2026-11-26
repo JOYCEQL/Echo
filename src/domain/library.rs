@@ -3,6 +3,20 @@ use crate::identity::uid;
 use serde::{Deserialize, Serialize};
 
 pub const BOOKS: [&str; 7] = ["工作", "产品", "设计", "学习", "生活", "灵感", "回收站"];
+/// Built-in keys from older libraries keep their names on disk.
+pub fn english_space_name(key: &str) -> &str {
+    match key {
+        "工作" => "Work",
+        "产品" => "Product",
+        "设计" => "Design",
+        "学习" => "Study",
+        "生活" => "Life",
+        "灵感" => "Ideas",
+        "回收站" => "Trash",
+        name => name,
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 pub enum Kind {
     Text,

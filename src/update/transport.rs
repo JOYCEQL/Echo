@@ -32,9 +32,8 @@ pub fn platform() -> Result<&'static str, String> {
 }
 
 pub fn public_key() -> Result<PublicKey, String> {
-    let key =
-        option_env!("ECHO_UPDATE_PUBLIC_KEY").ok_or("This build has no release update key")?;
-    PublicKey::from_base64(key.trim()).map_err(|e| format!("Invalid release update key: {e}"))
+    PublicKey::decode(include_str!("../../packaging/echo-update.pub"))
+        .map_err(|e| format!("Invalid release update key: {e}"))
 }
 
 pub fn version(value: &str) -> Result<[u64; 3], String> {

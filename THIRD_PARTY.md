@@ -2,6 +2,8 @@
 
 - Rune 官方 Metal 颜色空间修复：回移植 [#902](https://github.com/anomalyco/rune/pull/902)，提交 `53baebed87f3a64d081c3cebedb0482aed191558`。配置和缩放窗口时保留 CAMetalLayer 的 sRGB 标记，避免像素被按显示器色域解释。
 
+- Windows 窗口和任务栏图标使用 Rune [#600](https://github.com/anomalyco/rune/pull/600) 的可执行文件图标资源接口。首帧显示和激活采用 Rune [#619](https://github.com/anomalyco/rune/pull/619) 与 [#846](https://github.com/anomalyco/rune/pull/846) 的窗口处理。窗口在首帧显示时按系统前台权限请求焦点，包含所需的遮罩状态转换，省略新版框架专用的性能埋点。单实例监听器只创建一个管道实例，后续启动连接到已有监听器。
+
 - Rune, MIT: https://github.com/anomalyco/rune ，源码快照 `dece2aff3a254ffd6f6a0a49baa82b75664b3190`，见 `vendor/rune/REVISION` 与 `vendor/rune/LICENSE`。为避免 dev 分支更新导致接口变化，交付包内附固定源码快照；缩减了 workspace 成员列表，并应用 Echo 本地补丁：新增 Heading / Task 段落属性、HTML 往返保存、标题字号与富文本强调字重、复选框绘制与点击、相关回车和退格行为。补丁文件见 `patches/live-markdown.patch`，已经应用在随附源码中。
 - Feather Icons, MIT: https://github.com/feathericons/feather ，线性界面图标。仅调整描边颜色与粗细。
 - Tabler Icons, MIT: https://github.com/tabler/tabler-icons ，hand-stop、bulb 图标。仅调整描边颜色与粗细。

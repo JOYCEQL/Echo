@@ -23,7 +23,7 @@ GitHub Environment `release` 仅允许 `v*` 标签部署。它使用 `R2_ACCESS_
 
 - Mac 运行 `bash scripts/release.sh aarch64-apple-darwin` 和 `bash scripts/release.sh x86_64-apple-darwin`。跨架构时提前用 rustup 安装对应目标。每个架构生成供手动安装的 DMG 和供更新的 ZIP。若已配置 Developer ID 和公证服务，同时设置 `APPLE_SIGNING_IDENTITY` 与 `APPLE_NOTARY_PROFILE`，脚本会签名、公证、装订并校验。缺少这两项时，构建产物使用 ad-hoc 签名。
 - Windows 安装 Rust MSVC 工具链与 Inno Setup 后，运行 `pwsh -File scripts/release-windows.ps1`。正式系统代码签名使用 `ECHO_WINDOWS_CERT_THUMBPRINT` 和 `ECHO_WINDOWS_TIMESTAMP_URL`。提供两项后脚本会对应用和安装程序签名并验证。便携 ZIP 用于测试，应用内更新使用安装版。
-- 两端构建都把 `packaging/echo-update.pub` 嵌入客户端。妥善备份匹配的加密 Minisign 私钥和解锁凭据。Minisign 用于发行包认证，Apple 和 Windows 系统代码签名需要各自的证书。
+- 本地编译和 CI 打包都直接把 `packaging/echo-update.pub` 嵌入客户端。妥善备份匹配的加密 Minisign 私钥和解锁凭据。Minisign 用于发行包认证，Apple 和 Windows 系统代码签名需要各自的证书。
 
 ## 发布
 

@@ -70,8 +70,8 @@ static SOLID_DOCUMENT: Icon = Icon { name: "echo-solid-document", view: 24., bod
 static SOLID_CANVAS: Icon = Icon { name: "echo-solid-canvas", view: 24., body: include_str!("../assets/notebooks/solid/canvas.svg") };
 
 fn solid_glyph(book: &str) -> &'static Icon {
-    match book { "工作" => &SOLID_WORK, "产品" => &SOLID_PRODUCT, "设计" => &SOLID_DESIGN,
-        "学习" => &SOLID_STUDY, "生活" => &SOLID_LIFE, "灵感" => &SOLID_IDEAS, _ => &SOLID_NOTEBOOK }
+    match crate::library_data::english_space_name(book) { "Work" => &SOLID_WORK, "Product" => &SOLID_PRODUCT, "Design" => &SOLID_DESIGN,
+        "Study" => &SOLID_STUDY, "Life" => &SOLID_LIFE, "Ideas" => &SOLID_IDEAS, _ => &SOLID_NOTEBOOK }
 }
 
 static MONO_FOLDER: Icon = Icon { name: "echo-mono-folder", view: 24., body: include_str!("../assets/notebooks/monochrome/folder.svg") };
@@ -105,8 +105,8 @@ static PALS_IDEAS: Icon = Icon { name: "echo-notebook-pals-ideas", view: 32., bo
 static PALS_NOTEBOOK: Icon = Icon { name: "echo-notebook-pals-notebook", view: 32., body: include_str!("../assets/notebooks/pals/notebook.svg") };
 
 fn pals_glyph(book: &str) -> &'static Icon {
-    match book { "工作" => &PALS_WORK, "产品" => &PALS_PRODUCT, "设计" => &PALS_DESIGN,
-        "学习" => &PALS_STUDY, "生活" => &PALS_LIFE, "灵感" => &PALS_IDEAS, _ => &PALS_NOTEBOOK }
+    match crate::library_data::english_space_name(book) { "Work" => &PALS_WORK, "Product" => &PALS_PRODUCT, "Design" => &PALS_DESIGN,
+        "Study" => &PALS_STUDY, "Life" => &PALS_LIFE, "Ideas" => &PALS_IDEAS, _ => &PALS_NOTEBOOK }
 }
 
 pub static JOURNAL_WORK: Icon = Icon { name: "echo-notebook-journal-work", view: 32., body: include_str!("../assets/notebooks/journal/work.svg") };
@@ -118,18 +118,18 @@ pub static JOURNAL_IDEAS: Icon = Icon { name: "echo-notebook-journal-ideas", vie
 pub static JOURNAL_NOTEBOOK: Icon = Icon { name: "echo-notebook-journal-notebook", view: 32., body: include_str!("../assets/notebooks/journal/notebook.svg") };
 
 fn journal_glyph(book: &str) -> &'static Icon {
-    match book { "工作" => &JOURNAL_WORK, "产品" => &JOURNAL_PRODUCT, "设计" => &JOURNAL_DESIGN,
-        "学习" => &JOURNAL_STUDY, "生活" => &JOURNAL_LIFE, "灵感" => &JOURNAL_IDEAS, _ => &JOURNAL_NOTEBOOK }
+    match crate::library_data::english_space_name(book) { "Work" => &JOURNAL_WORK, "Product" => &JOURNAL_PRODUCT, "Design" => &JOURNAL_DESIGN,
+        "Study" => &JOURNAL_STUDY, "Life" => &JOURNAL_LIFE, "Ideas" => &JOURNAL_IDEAS, _ => &JOURNAL_NOTEBOOK }
 }
 
 pub fn ink_glyph(book: &str) -> &'static Icon {
-    match book { "工作" => &INK_WORK, "产品" => &INK_PRODUCT, "设计" => &INK_DESIGN,
-        "学习" => &INK_STUDY, "生活" => &INK_LIFE, "灵感" => &INK_IDEAS, _ => &INK_NOTEBOOK }
+    match crate::library_data::english_space_name(book) { "Work" => &INK_WORK, "Product" => &INK_PRODUCT, "Design" => &INK_DESIGN,
+        "Study" => &INK_STUDY, "Life" => &INK_LIFE, "Ideas" => &INK_IDEAS, _ => &INK_NOTEBOOK }
 }
 
 pub fn glyph(book: &str) -> &'static Icon {
-    match book { "工作" => &WORK, "产品" => &PRODUCT, "设计" => &DESIGN,
-        "学习" => &STUDY, "生活" => &LIFE, "灵感" => &IDEAS, _ => &NOTEBOOK }
+    match crate::library_data::english_space_name(book) { "Work" => &WORK, "Product" => &PRODUCT, "Design" => &DESIGN,
+        "Study" => &STUDY, "Life" => &LIFE, "Ideas" => &IDEAS, _ => &NOTEBOOK }
 }
 pub fn render(s: &State, book: &str, size: f32, open: bool, muted: u32) -> El {
     match s.notebook_icon_style {

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/echo-icon.png" width="128" height="128" alt="Echo 橙黄双引号图标">
+  <img src="docs/images/echo-icon.png" width="160" height="160" alt="Echo 橙黄笑脸图标">
 </p>
 
 <h1 align="center">Echo</h1>
@@ -26,11 +26,15 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/overview.png" width="100%" alt="左侧的结构化文档展示正文与章节大纲，右侧的自由画布展示路线图、待办和行程表。">
+  <img src="docs/images/overview.png" width="100%" alt="英文入门文档 Welcome to Echo 与 Weekend Walk 画布中的路线图和出门清单。">
+</p>
+
+<p align="center">
+  <a href="docs/images/document.png">查看完整文档截图</a> · <a href="docs/images/canvas.png">查看完整画布截图</a>
 </p>
 
 > [!NOTE]
-> 通过上方按钮从 Echo 下载域名获取安装包。首次安装后，可以在「设置 → 软件更新」中检查并下载新版。
+> 通过上方按钮从 Echo 下载域名获取安装包。首次安装后，可以在「Settings → Software updates」中检查并下载新版。
 
 ## 为什么是 Echo
 
@@ -42,9 +46,9 @@
 
 ## 快速上手
 
-1. **打开内置示例**：首次启动后，「工作」空间自带《欢迎使用 Echo · 结构化入门》和《周末散步 · 自由画布入门》，可直接改字、勾选待办或拖拽卡片。
-2. **新建你的第一页**：点击「新建页面」（`⌘ N` / `Ctrl + N`）选择文档或画布，输入 `/` 探索全部内容块。
-3. **导入与备份笔记**：直接把 `.md` 文件拖入窗口，或点击文件夹图标导入；备份整库时，在「设置 → 本地数据」中打开目录，退出 Echo 后整目录复制即可。
+1. **打开内置示例**：新版首次启动时界面默认为英文，可在 Settings → Appearance → Language 切换为简体中文。Work 空间自带文档《Welcome to Echo》和画布《Weekend Walk》，可直接改字、勾选待办或拖拽卡片。
+2. **新建你的第一页**：点击「New page」（`⌘ N` / `Ctrl + N`）选择文档或画布，输入 `/` 探索全部内容块。
+3. **导入与备份笔记**：直接把 `.md` 文件拖入窗口，或点击文件夹图标导入；备份整库时，在「Settings → Local data」中打开目录，退出 Echo 后整目录复制即可。
 
 更多快捷键、目录结构与旧版 SQLite 迁移步骤，请参阅 [**使用与备份指南**](./docs/guide.md)。
 
@@ -52,7 +56,7 @@
 
 - **macOS**：支持 macOS 13 或更新版本（Apple Silicon 或 Intel），Apple Silicon 下载上方安装包，Intel 下载 [Intel 安装包](https://echo-downloads.magicv.art/latest/Echo-macos-x86_64.dmg)。打开 DMG 后将 `Echo.app` 移入「应用程序」。
 - **Windows**：支持 Windows 10 (1809+) / Windows 11（x64，显卡驱动需支持 DX12 或 Vulkan），运行 `.exe` 安装程序即可。
-- **应用内更新**：安装发行版后默认自动检查新版本，发现新版时侧栏会出现下载按钮；点击下载并校验完成后，再确认重启升级。可在「设置 → 软件更新」手动检查或关闭自动检查。
+- **应用内更新**：安装发行版后默认自动检查新版本，发现新版时侧栏会出现下载按钮；点击下载并校验完成后，再确认重启升级。可在「Settings → Software updates」手动检查或关闭自动检查。
 
 ### 首次安装的系统安全提示
 

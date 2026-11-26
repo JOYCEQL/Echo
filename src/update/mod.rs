@@ -274,6 +274,8 @@ fn save_before_install(s: &mut State) -> Result<(), String> {
 
 pub fn release_note(s: &State) -> Option<&'static str> {
     match (env!("CARGO_PKG_VERSION"), s.language) {
+        ("0.0.2", crate::i18n::Language::Chinese) => Some("Echo 换上了新图标。首次启动默认使用英文界面和英文示例。Windows 再次启动时会唤回原窗口。"),
+        ("0.0.2", crate::i18n::Language::English) => Some("Echo has a new icon. New libraries start in English with a writing guide and a sample canvas. Launching Echo again on Windows brings back your open window."),
         ("0.0.1", crate::i18n::Language::Chinese) => Some("安装包和更新现已通过 Echo 下载域名分发。Mac 支持 Apple Silicon 和 Intel。"),
         ("0.0.1", crate::i18n::Language::English) => Some("Echo now delivers installers and updates from its own download domain. Mac downloads are available for Apple Silicon and Intel."),
         _ => None,

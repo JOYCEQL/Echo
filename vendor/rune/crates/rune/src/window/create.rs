@@ -47,7 +47,7 @@ impl<S: 'static> Host<S> {
         // Windows opens it hidden, then shows it cloaked until its first frame lands
         // (`Cloak`), so it never comes on screen empty.
         #[cfg(target_os = "windows")]
-        let attrs = crate::platform::app_icon::with_icon(attrs.with_visible(false));
+        let attrs = crate::platform::app_icon::with_icon(attrs.with_visible(false).with_active(false));
         let window = Arc::new(event_loop.create_window(attrs).map_err(|e| e.to_string())?);
         #[cfg(target_os = "windows")]
         crate::platform::win32::follow_suggested_rect(&window);
@@ -58,8 +58,7 @@ impl<S: 'static> Host<S> {
         let cloak = crate::platform::win32::Cloak::default();
         #[cfg(target_os = "windows")]
         if visible {
-            cloak.hold(&window, Instant::now() + win::READY_FALLBACK);
-            // Unfocused (`App::open_inactive`), the first show doesn't activate it.
+            cloak.hold(&window, Instant::now() + win::READY_FALLBACK, focus);
             window.set_visible(true);
             if maximize { window.set_maximized(true); }
         }

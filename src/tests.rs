@@ -944,6 +944,7 @@ impl Fixture {
         let notes = seed();
         store.save(&notes, &notes[0].id).unwrap();
         store.set_preference("book_order", &BOOKS[..6].join(",")).unwrap();
+        store.set_preference("ui_language", "zh-CN").unwrap();
         f
     }
 }
@@ -5133,6 +5134,7 @@ fn welcome_library_initializes_once_and_deleted_examples_stay_deleted() {
     assert_eq!(s.book_order, crate::welcome::NOTEBOOKS.split(',').collect::<Vec<_>>());
     assert_eq!(s.notes.len(),2);
     assert_eq!(s.current,"welcome-document");
+    assert_eq!(s.language, crate::i18n::Language::English);
     let reopened=State::from_root(root.clone());
     assert_eq!(reopened.notes.len(),2);
     assert_eq!(reopened.notes[0].doc,s.notes[0].doc);

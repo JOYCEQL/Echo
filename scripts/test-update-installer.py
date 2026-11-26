@@ -21,10 +21,12 @@ with tempfile.TemporaryDirectory(prefix="echo-update-audit-") as temporary:
     secret, public = base / "test.key", base / "test.pub"
     run("minisign", "-G", "-W", "-s", str(secret), "-p", str(public), stdout=subprocess.DEVNULL)
     env = os.environ.copy()
-    env["ECHO_UPDATE_PUBLIC_KEY"] = public.read_text().splitlines()[1]
-    # This builds a test-key binary only; never install this binary for real use.
+    # Exercise the same embedded-key path as a real build in a disposable source tree.
+    source = base / "source"
+    shutil.copytree(ROOT, source, ignore=shutil.ignore_patterns(".git", "target", "dist", "__pycache__"))
+    shutil.copyfile(public, source / "packaging/echo-update.pub")
     env["CARGO_TARGET_DIR"] = str(ROOT / "target/qa")
-    run("cargo", "build", "--locked", cwd=ROOT, env=env)
+    run("cargo", "build", "--locked", cwd=source, env=env)
     current = next(p["version"] for p in json.loads(subprocess.check_output(["cargo", "metadata", "--no-deps", "--format-version", "1"], cwd=ROOT))["packages"] if p["name"] == "echo")
     parts = [int(p) for p in current.split(".")]
     parts[2] += 1

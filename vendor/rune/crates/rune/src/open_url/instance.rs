@@ -71,7 +71,7 @@ mod windows {
     };
     use windows_sys::Win32::System::Pipes::{
         ConnectNamedPipe, CreateNamedPipeW, DisconnectNamedPipe, GetNamedPipeServerProcessId, PIPE_READMODE_BYTE, PIPE_REJECT_REMOTE_CLIENTS,
-        PIPE_TYPE_BYTE, PIPE_UNLIMITED_INSTANCES, PIPE_WAIT, WaitNamedPipeW,
+        PIPE_TYPE_BYTE, PIPE_WAIT, WaitNamedPipeW,
     };
     use windows_sys::Win32::System::RemoteDesktop::ProcessIdToSessionId;
     use windows_sys::Win32::System::Threading::GetCurrentProcessId;
@@ -107,7 +107,7 @@ mod windows {
                     listen(pipe);
                     return true;
                 }
-                Err(ERROR_ACCESS_DENIED) => {}
+                Err(ERROR_ACCESS_DENIED | ERROR_PIPE_BUSY) => {}
                 // Not a pipe name this process may use: run unclaimed rather than not at all.
                 Err(_) => return true,
             }
@@ -154,7 +154,7 @@ mod windows {
                 name.as_ptr(),
                 PIPE_ACCESS_INBOUND | FILE_FLAG_FIRST_PIPE_INSTANCE,
                 PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS,
-                PIPE_UNLIMITED_INSTANCES,
+                1, // The listener reuses its handle for every handoff.
                 0,
                 64 * 1024,
                 0,

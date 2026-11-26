@@ -33,17 +33,10 @@ jobs:
         run: |
           cargo test --locked --target x86_64-pc-windows-msvc -- --test-threads=1
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Configure the official update source for release candidates
-        if: github.repository == 'JOYCEQL/Echo' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name != 'pull_request'
-        shell: pwsh
-        run: |
-          $PublicKey = (Get-Content packaging/echo-update.pub)[1]
-          if ([Convert]::FromBase64String($PublicKey).Length -ne 42) { throw 'Invalid Echo update public key' }
-          "ECHO_UPDATE_PUBLIC_KEY=$PublicKey" >> $env:GITHUB_ENV
       - name: Build portable zip and per-user installer
         shell: pwsh
         run: ./scripts/build-windows.ps1 -Installer
-      - name: Verify install and uninstall with a Unicode path
+      - name: Verify installation, window activation, and uninstallation
         shell: pwsh
         run: |
           $Setup = (Get-ChildItem dist/Echo-*-windows-x64-setup.exe).FullName
@@ -51,6 +44,7 @@ jobs:
           $Process = Start-Process $Setup -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /DIR=`"$InstallDir`"" -Wait -PassThru
           if ($Process.ExitCode -ne 0) { throw "Setup failed: $($Process.ExitCode)" }
           if (-not (Test-Path "$InstallDir/Echo.exe")) { throw 'Installed executable missing' }
+          ./scripts/test-windows-window.ps1 -InstallDir $InstallDir
           $Process = Start-Process "$InstallDir/unins000.exe" -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -Wait -PassThru
           if ($Process.ExitCode -ne 0) { throw "Uninstall failed: $($Process.ExitCode)" }
           if (Test-Path "$InstallDir/Echo.exe") { throw 'Executable was not uninstalled' }

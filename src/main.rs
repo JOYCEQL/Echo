@@ -291,6 +291,20 @@ fn main() {
         }
         return;
     }
+    #[cfg(target_os = "windows")]
+    if !rune::is_headless() {
+        match platform::claim_library_window() {
+            Ok(true) => {}
+            Ok(false) => return,
+            Err(error) => {
+                eprintln!("Cannot open the Echo library: {error}");
+                std::process::exit(1);
+            }
+        }
+    }
+    #[cfg(target_os = "windows")]
+    rune::set_app_icon_resource(1); // winresource::set_icon embeds the app icon under ID 1.
+    #[cfg(target_os = "macos")]
     rune::set_app_icon(&include_bytes!("../packaging/Echo-runtime.png")[..])
         .expect("bundled system-rendered Echo icon");
     let spec = AppSpec {

@@ -256,7 +256,9 @@ impl State {
         let mut seen = std::collections::HashSet::new();
         book_order.retain(|key| seen.insert(key.clone()));
         let mut tree_expanded = std::collections::HashSet::new();
-        tree_expanded.insert("book:工作".into());
+        if let Some(first) = book_order.first() {
+            tree_expanded.insert(format!("book:{first}"));
+        }
         tree_expanded.insert(format!("book:{book}"));
         for note in &notes {
             if let Some(pid) = &note.parent_id {
@@ -1184,15 +1186,16 @@ impl State {
         if self.document_save_failed {
             return String::new();
         }
+        let book = if book == "回收站" {
+            let Some(first) = self.book_order.first() else { return String::new() };
+            first.clone()
+        } else {
+            book.to_string()
+        };
         self.remember();
         self.mode = WorkspaceMode::Document;
         self.selected = None;
         self.hovered = None;
-        let book = if book == "回收站" {
-            "工作".to_string()
-        } else {
-            book.to_string()
-        };
         self.tree_expanded.insert(format!("book:{book}"));
         if let Some(pid) = &parent_id {
             self.tree_expanded.insert(pid.clone());
@@ -1343,16 +1346,7 @@ impl State {
         if !self.language.is_english() {
             return key;
         }
-        match key {
-            "工作" => "Work",
-            "产品" => "Product",
-            "设计" => "Design",
-            "学习" => "Study",
-            "生活" => "Life",
-            "灵感" => "Ideas",
-            "回收站" => "Trash",
-            _ => panic!("unknown notebook key: {key}"),
-        }
+        crate::library_data::english_space_name(key)
     }
     pub fn focus_page_rename(&mut self, id: &str, tx: &mut rune::Tx) {
         if self.sidebar_collapsed {

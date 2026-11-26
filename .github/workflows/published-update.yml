@@ -6,6 +6,10 @@ on:
         description: Full commit SHA used to build the release
         required: true
         type: string
+      from_version:
+        description: Published version to install before testing the update
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
@@ -21,10 +25,10 @@ jobs:
         with:
           ref: ${{ inputs.release_commit }}
           path: candidate
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: candidate
       - name: Exercise the updater against the public release
         working-directory: candidate
         shell: pwsh
+        env:
+          ECHO_PREVIOUS_VERSION: ${{ inputs.from_version }}
+          GH_TOKEN: ${{ github.token }}
         run: ../tools/scripts/test-published-windows.ps1

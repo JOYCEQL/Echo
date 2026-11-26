@@ -24,7 +24,7 @@ fn isolated_library(count: usize) -> (Fixture, State) {
         doc.blocks = vec![doc.new_block(DocBlockKind::Text, "用于测量实际笔记库的保存与导航开销。".repeat(40))];
         notes.push(n);
     }
-    store.save_with_preferences(&notes, &notes[0].id, &[("book_order", "工作")]).unwrap();
+    store.save_with_preferences(&notes, &notes[0].id, &[("book_order", notes[0].notebook.as_str())]).unwrap();
     (f, State::from_root(store.root.clone()))
 }
 
@@ -245,7 +245,7 @@ fn canvas_cold_start_paints_content_before_the_first_click() {
             let mut store = crate::storage::Store::open(f.0.clone()).unwrap();
             notes[1].zoom = zoom;
             notes[1].pan = [0., offset];
-            store.save_with_preferences(&notes, "welcome-canvas", &[("book_order", "工作")]).unwrap();
+            store.save_with_preferences(&notes, "welcome-canvas", &[("book_order", notes[0].notebook.as_str())]).unwrap();
             let s = State::from_root(f.0.clone());
             assert_eq!(s.current, "welcome-canvas");
             let mut rt = Runtime::new(s, crate::ui::view, (1280., 943.), Env::new(false, 2.));

@@ -12,6 +12,11 @@ fn manifest() -> Manifest {
 }
 
 #[test]
+fn manual_checks_are_available_with_automatic_updates_off() {
+    assert!(matches!(Updater::new(false).status, Status::Idle));
+}
+
+#[test]
 fn versions_are_numeric_and_reject_ambiguous_or_unsafe_values() {
     assert!(version("0.11.0").unwrap() > version("0.9.9").unwrap());
     assert_eq!(version("0.10.4").unwrap(), [0, 10, 4]);
