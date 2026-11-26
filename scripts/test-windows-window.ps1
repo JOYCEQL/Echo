@@ -3,11 +3,19 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $Exe = (Get-Item (Join-Path $InstallDir 'Echo.exe')).FullName
-$Shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) 'Echo/Echo.lnk'
-$Shell = New-Object -ComObject WScript.Shell
-if (!(Test-Path -LiteralPath $Shortcut) -or $Shell.CreateShortcut($Shortcut).TargetPath -ne $Exe) {
-    throw "The installed Start menu shortcut does not point to $Exe"
+# Inno can register the group in the current user's or the shared Start menu.
+$ProgramFolders = @(
+    [Environment]::GetFolderPath('Programs')
+    [Environment]::GetFolderPath('CommonPrograms')
+) | Select-Object -Unique
+$Shortcuts = @(foreach ($Folder in $ProgramFolders) {
+    Get-ChildItem -LiteralPath $Folder -Recurse -File -Filter 'Echo.lnk'
+})
+if ($Shortcuts.Count -ne 1) {
+    throw "Expected one Echo shortcut in [$($ProgramFolders -join ', ')], found [$(($Shortcuts | ForEach-Object FullName) -join ', ')]"
 }
+$Shortcut = $Shortcuts[0].FullName
+Write-Host "Testing installed shortcut $Shortcut; the process must run from $Exe"
 Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
