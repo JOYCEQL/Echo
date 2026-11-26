@@ -67,7 +67,7 @@ mod windows {
         GetLastError, HANDLE, HWND, INVALID_HANDLE_VALUE, LPARAM,
     };
     use windows_sys::Win32::Storage::FileSystem::{
-        CreateFileW, FILE_FLAG_FIRST_PIPE_INSTANCE, OPEN_EXISTING, PIPE_ACCESS_INBOUND, ReadFile, WriteFile,
+        CreateFileW, FILE_FLAG_FIRST_PIPE_INSTANCE, OPEN_EXISTING, PIPE_ACCESS_INBOUND, FlushFileBuffers, ReadFile, WriteFile,
     };
     use windows_sys::Win32::System::Pipes::{
         ConnectNamedPipe, CreateNamedPipeW, DisconnectNamedPipe, GetNamedPipeServerProcessId, PIPE_READMODE_BYTE, PIPE_REJECT_REMOTE_CLIENTS,
@@ -91,11 +91,18 @@ mod windows {
     type Relaunch = Box<dyn Fn() -> bool + Send>;
 
     /// Sends a launch without links to the loop as a reopen; set once the loop runs.
-    static RELAUNCH: Mutex<Option<Relaunch>> = Mutex::new(None);
+    struct Reopen {
+        callback: Option<Relaunch>,
+        pending: bool,
+    }
+
+    static RELAUNCH: Mutex<Reopen> = Mutex::new(Reopen { callback: None, pending: false });
 
     /// The loop runs: a launch without links calls `relaunch` from now on (`WakeEvent::Reopen`).
     pub(crate) fn on_relaunch(relaunch: impl Fn() -> bool + Send + 'static) {
-        *RELAUNCH.lock().unwrap_or_else(|e| e.into_inner()) = Some(Box::new(relaunch));
+        let mut state = RELAUNCH.lock().unwrap_or_else(|e| e.into_inner());
+        if std::mem::take(&mut state.pending) { relaunch(); }
+        state.callback = Some(Box::new(relaunch));
     }
 
     pub(super) fn claim(id: &str) -> bool {
@@ -217,8 +224,11 @@ mod windows {
     fn relaunched(args: Vec<String>) {
         let links: Vec<String> = args.into_iter().filter(|a| super::is_link(a)).collect();
         if links.is_empty() {
-            if let Some(relaunch) = RELAUNCH.lock().unwrap_or_else(|e| e.into_inner()).as_ref() {
+            let mut state = RELAUNCH.lock().unwrap_or_else(|e| e.into_inner());
+            if let Some(relaunch) = &state.callback {
                 relaunch();
+            } else {
+                state.pending = true;
             }
             return;
         }
@@ -268,7 +278,10 @@ mod windows {
         let mut written = 0;
         // SAFETY: writes `message` to the open pipe, then closes the handle once.
         let ok = unsafe {
-            let ok = WriteFile(pipe, message.as_ptr(), message.len() as u32, &mut written, std::ptr::null_mut()) != 0;
+            // Keep the client connected until the listener reads the message. A client
+            // closing before ConnectNamedPipe can otherwise be discarded as disconnected.
+            let ok = WriteFile(pipe, message.as_ptr(), message.len() as u32, &mut written, std::ptr::null_mut()) != 0
+                && FlushFileBuffers(pipe) != 0;
             CloseHandle(pipe);
             ok
         };

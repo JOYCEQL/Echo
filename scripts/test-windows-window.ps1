@@ -32,6 +32,9 @@ function Wait-For([scriptblock]$Condition, [string]$Description) {
         if (& $Condition) { return }
         Start-Sleep -Milliseconds 100
     } while ([DateTime]::UtcNow -lt $Deadline)
+    Get-Process -Name Echo -ErrorAction SilentlyContinue | ForEach-Object {
+        Write-Host "PID=$($_.Id) HWND=$($_.MainWindowHandle) iconic=$([EchoWindowTest]::IsIconic($_.MainWindowHandle)) title=$($_.MainWindowTitle) path=$($_.Path)"
+    }
     throw "Timed out waiting for $Description"
 }
 function Get-Clients {
@@ -63,13 +66,15 @@ try {
     } 'one responsive window after two launches'
     $Client = Get-Clients
     $Handle = $Client.MainWindowHandle
+    Write-Host "Original PID=$($Client.Id) HWND=$Handle title=$($Client.MainWindowTitle)"
     foreach ($Restore in 'system', 'shortcut') {
         Send-WindowCommand $Handle 0xF020 # SC_MINIMIZE
         Wait-For { [EchoWindowTest]::IsIconic($Handle) } 'the window to minimize'
         if ($Restore -eq 'system') {
             Send-WindowCommand $Handle 0xF120 # SC_RESTORE
         } else {
-            Start-Process -FilePath $Shortcut
+            $Launch = Start-Process -FilePath $Shortcut -PassThru
+            if ($Launch) { Write-Host "Shortcut launch PID=$($Launch.Id)" }
         }
         Wait-For {
             $Clients = @(Get-Clients)
