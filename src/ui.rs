@@ -358,6 +358,7 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
         app = app.child(crate::look::popover(s, cx, w, h));
     }
     for overlay in crate::library_ui::layers(s, w, h) { app = app.child(overlay); }
+    if let Some(notice) = crate::update::policy_notice(s, w, h) { app = app.child(notice); }
     let mut window = el().key("window").w_full().h_full()
         .on_paste_content(crate::doc_editor::on_paste).child(app);
     if s.settings.is_none() {

@@ -79,6 +79,18 @@ pub fn installed_app() -> Result<PathBuf, String> {
 fn verify_app(new: &Path, app: &Path, manifest: &Manifest) -> Result<(), String> {
     // Called only after verifying the entire archive with the embedded release key.
     verify_code(new)?;
+    fn team(app: &Path) -> Result<Option<String>, String> {
+        let details = Command::new("/usr/bin/codesign").args(["-d", "--verbose=4"]).arg(app)
+            .output().map_err(|err| err.to_string())?;
+        if !details.status.success() { return Err("Could not identify app signature".into()); }
+        let description = String::from_utf8_lossy(&details.stderr);
+        let id = description.lines().find_map(|line| line.strip_prefix("TeamIdentifier="))
+            .ok_or("Missing signing team information")?;
+        Ok((id != "not set").then(|| id.to_string()))
+    }
+    if let Some(installed) = team(app)? && team(new)?.as_ref() != Some(&installed) {
+        return Err("Update was signed by a different Apple developer team".into());
+    }
     if plist(new, "CFBundleIdentifier")? != plist(app, "CFBundleIdentifier")?
         || plist(new, "CFBundleShortVersionString")? != manifest.version
         || plist(new, "CFBundleExecutable")? != "Echo"
@@ -234,7 +246,11 @@ fn apply(stage: &Path, parent_pid: i32) -> Result<(), String> {
         variable.push(root);
         open.arg("--env").arg(variable);
     }
-    run(open.arg(&plan.app))?;
+    if let Err(error) = run(open.arg(&plan.app)) {
+        exchange(&plan.app, &new).map_err(|rollback| format!(
+            "Launch failed: {error}. Restoring previous app failed: {rollback}"))?;
+        return Err(format!("Launch failed; previous app restored: {error}"));
+    }
     fs::remove_dir_all(stage).map_err(|e| format!("Update installed; staging cleanup failed: {e}"))
 }
 

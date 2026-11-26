@@ -238,6 +238,9 @@ fn updates(s: &State) -> El {
     let mut content = col().w_full().gap(18.)
         .child(label(format!("Echo {}", env!("CARGO_PKG_VERSION")), 18., 550., theme_ink(s.theme())))
         .child(label(status, 14., 450., theme_muted(s.theme())).w_full().wrap());
+    if let Some(note) = crate::update::release_note(s) {
+        content = content.child(label(note, 13., 450., theme_muted(s.theme())).w_full().wrap());
+    }
     if matches!(s.updater.status, Status::Downloading(_)) {
         content = content.child(crate::update::update_button(s));
     }
@@ -251,7 +254,7 @@ fn updates(s: &State) -> El {
         content = content.child(rule(s)).child(row().w_full().gap(16.).center_y()
             .child(col().grow(1.).min_w(0.).gap(6.)
                 .child(label(s.tr("自动检查更新"), 14., 450., theme_ink(s.theme())))
-                .child(label(s.tr("仅检查版本；下载和重启由你决定。"), 12.5, 400., theme_muted(s.theme())).w_full().wrap()))
+                .child(label(s.tr("控制常规更新检查。紧急修复会自动下载，重启时会先保存笔记。"), 12.5, 400., theme_muted(s.theme())).w_full().wrap()))
             .child(action(s, "update-automatic", s.tr(if s.updater.automatic { "已开启" } else { "已关闭" }), &ROTATE_CCW, false)
                 .role("switch").checked(s.updater.automatic).on_press_tx(crate::update::toggle)));
     }

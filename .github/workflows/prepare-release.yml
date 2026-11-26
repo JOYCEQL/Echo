@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: echo-prepare-release
@@ -28,8 +29,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Test version updates
-        run: python -m unittest discover -s scripts -p 'test_bump_version.py'
+      - name: Test version and release publication
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y minisign
+          python -m unittest discover -s scripts -p 'test_*.py'
       - name: Prepare shared release version
         id: version
         env:
@@ -49,13 +53,12 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add Cargo.toml Cargo.lock packaging/Info.plist packaging/windows/Echo.manifest README.md
+          git add Cargo.toml Cargo.lock packaging/Info.plist packaging/windows/Echo.manifest
           git commit -m "chore(release): bump version to $RELEASE_VERSION"
           git tag "v$RELEASE_VERSION"
           git push --atomic origin HEAD:main "refs/tags/v$RELEASE_VERSION"
-          {
-            echo "## Echo $RELEASE_VERSION"
-            echo "Version references updated and tagged as v$RELEASE_VERSION."
-            echo "Build both macOS and Windows from this tag; neither build increments the version again."
-            echo "This workflow prepares the version; it does not publish a GitHub Release."
-          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish the prepared tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.version.outputs.version }}
+        run: gh workflow run release.yml --ref "$TAG"

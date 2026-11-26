@@ -22,9 +22,9 @@ with tempfile.TemporaryDirectory(prefix="echo-update-audit-") as temporary:
     run("minisign", "-G", "-W", "-s", str(secret), "-p", str(public), stdout=subprocess.DEVNULL)
     env = os.environ.copy()
     env["ECHO_UPDATE_PUBLIC_KEY"] = public.read_text().splitlines()[1]
-    env.pop("ECHO_UPDATE_REPOSITORY", None)
     # This builds a test-key binary only; never install this binary for real use.
-    run("cargo", "build", "--release", "--locked", cwd=ROOT, env=env)
+    env["CARGO_TARGET_DIR"] = str(ROOT / "target/qa")
+    run("cargo", "build", "--locked", cwd=ROOT, env=env)
     current = next(p["version"] for p in json.loads(subprocess.check_output(["cargo", "metadata", "--no-deps", "--format-version", "1"], cwd=ROOT))["packages"] if p["name"] == "echo")
     parts = [int(p) for p in current.split(".")]
     parts[2] += 1
@@ -45,7 +45,7 @@ with tempfile.TemporaryDirectory(prefix="echo-update-audit-") as temporary:
         run("codesign", "--force", "--sign", "-", str(path), stderr=subprocess.DEVNULL)
 
     old = base / "Echo.app"
-    bundle(old, ROOT / "target/release/echo", current)
+    bundle(old, ROOT / "target/qa/debug/echo", current)
     source = base / "probe.c"
     source.write_text('#include <stdio.h>\n#include <stdlib.h>\n'
                       'int main(void) { char p[4096]; const char *d=getenv("ECHO_DATA_DIR"); '
@@ -61,7 +61,7 @@ with tempfile.TemporaryDirectory(prefix="echo-update-audit-") as temporary:
     run("ditto", "-c", "-k", "--keepParent", str(new), str(package))
     name = f"Echo-{version}-{platform}.zip"
     run("minisign", "-S", "-s", str(secret), "-m", str(package), "-t", name)
-    manifest = dict(version=version, platform=platform, size=package.stat().st_size,
+    manifest = dict(version=version, platform=platform, url=f"https://echo-downloads.magicv.art/v{version}/{name}", size=package.stat().st_size,
                     signature=Path(str(package)+".minisig").read_text())
     metadata = old.stat()
     plan = dict(manifest=manifest, app=str(old), device=metadata.st_dev, inode=metadata.st_ino)
@@ -94,9 +94,12 @@ with tempfile.TemporaryDirectory(prefix="echo-update-audit-") as temporary:
         stdout, stderr = helper.communicate(timeout=30)
         assert helper.returncode == 0, stderr
         deadline = time.monotonic()+15
-        while not (data / "restarted.txt").exists() and time.monotonic() < deadline:
+        marker = data / "restarted.txt"
+        while time.monotonic() < deadline:
+            if marker.exists() and marker.read_text() == "new version started":
+                break
             time.sleep(0.1)
-        assert (data / "restarted.txt").read_text() == "new version started"
+        assert marker.exists() and marker.read_text() == "new version started", "updated process did not finish its startup probe"
         assert (data / "note.md").read_text() == "This note must remain untouched.\n"
         assert not stage.exists(), "successful install must clean its staging directory"
         print("PASS: corrupt package rejected; commit/exit gates; atomic swap; new process started; data unchanged; stage cleaned")

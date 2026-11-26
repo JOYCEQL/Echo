@@ -5,6 +5,7 @@ fn manifest() -> Manifest {
     Manifest {
         version: "0.11.0".into(),
         platform: "macos-arm64".into(),
+        url: "https://echo-downloads.magicv.art/v0.11.0/Echo-0.11.0-macos-arm64.zip".into(),
         size: include_bytes!("fixtures/package.txt").len() as u64,
         signature: include_str!("fixtures/package.minisig").into(),
     }
@@ -62,6 +63,7 @@ fn signed_package_rejects_corruption_truncation_wrong_key_and_relabelled_version
     let mut replay = m.clone();
     replay.version = "9.0.0".into();
     assert!(replay.validate("macos-arm64").is_err());
+    replay.url = replay.expected_url();
     replay.signature = replay.signature.replace("0.11.0", "9.0.0");
     replay.validate("macos-arm64").unwrap();
     assert!(
@@ -74,8 +76,8 @@ fn signed_package_rejects_corruption_truncation_wrong_key_and_relabelled_version
 fn manifests_cannot_redirect_downloads_or_choose_another_platform() {
     let mut m = manifest();
     assert_eq!(
-        m.url("https://github.com/JOYCEQL/Echo"),
-        "https://github.com/JOYCEQL/Echo/releases/download/v0.11.0/Echo-0.11.0-macos-arm64.zip"
+        m.expected_url(),
+        "https://echo-downloads.magicv.art/v0.11.0/Echo-0.11.0-macos-arm64.zip"
     );
     assert!(m.validate("macos-x86_64").is_err());
     for size in [0, 512 * 1024 * 1024 + 1] {
@@ -84,23 +86,7 @@ fn manifests_cannot_redirect_downloads_or_choose_another_platform() {
     }
     let mut json = serde_json::to_value(manifest()).unwrap();
     json["url"] = "https://attacker.example/file.zip".into();
-    assert!(serde_json::from_value::<Manifest>(json).is_err());
-}
-
-#[test]
-fn repository_config_rejects_credentials_queries_and_path_traversal() {
-    transport::validate_repository("https://github.com/JOYCEQL/echo-releases").unwrap();
-    for url in [
-        "http://github.com/a/b",
-        "https://github.com.evil/a/b",
-        "https://github.com/a/b?token=x",
-        "https://github.com/a/../b",
-        "https://github.com/a/..",
-        "https://user@github.com/a/b",
-        "https://github.com/a/b/",
-    ] {
-        assert!(transport::validate_repository(url).is_err(), "{url}");
-    }
+    assert!(serde_json::from_value::<Manifest>(json).unwrap().validate("macos-arm64").is_err());
 }
 
 #[test]
@@ -175,8 +161,8 @@ fn windows_packages_use_setup_names_and_cannot_reuse_a_mac_signature() {
     m.platform = "windows-x64".into();
     assert_eq!(m.name(), "Echo-0.11.0-windows-x64-setup.exe");
     assert_eq!(
-        m.url("https://github.com/JOYCEQL/Echo"),
-        "https://github.com/JOYCEQL/Echo/releases/download/v0.11.0/Echo-0.11.0-windows-x64-setup.exe"
+        m.expected_url(),
+        "https://echo-downloads.magicv.art/v0.11.0/Echo-0.11.0-windows-x64-setup.exe"
     );
     assert!(m.validate("windows-x64").is_err());
 }

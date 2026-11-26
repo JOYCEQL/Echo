@@ -1,7 +1,9 @@
 //! Application updates have their own worker and state; they never access document data.
 mod control;
-pub use control::update_button;
+pub use control::{policy_notice, update_button};
 mod installer;
+mod policy;
+mod proxy;
 #[cfg(target_os = "macos")]
 #[path = "macos.rs"]
 mod native;
@@ -60,12 +62,14 @@ pub struct Updater {
     pub automatic: bool,
     worker: Option<mpsc::Receiver<WorkerEvent>>,
     next_check: Instant,
+    last_check: Option<Instant>,
+    policy: policy::Monitor,
     installer: Option<native::Installer>,
 }
 impl Updater {
     pub fn new(automatic: bool) -> Self {
         Self {
-            status: if transport::public_key().is_ok() && transport::repository().is_ok() {
+            status: if transport::public_key().is_ok() {
                 Status::Idle
             } else {
                 Status::Unavailable
@@ -74,8 +78,25 @@ impl Updater {
             worker: None,
             next_check: Instant::now() + Duration::from_secs(10),
             installer: None,
+            last_check: None,
+            policy: policy::Monitor::new(),
         }
     }
+    pub fn foreground(&mut self) {
+        if self.automatic && self.last_check.is_some_and(|last| last.elapsed() >= Duration::from_secs(3600)) {
+            self.next_check = Instant::now();
+        }
+    }
+
+    fn required(&self) -> Option<[u64; 3]> {
+        self.policy.current.as_ref()?.minimum()
+    }
+
+    pub fn required_ready(&self) -> bool {
+        matches!((&self.status, self.required()), (Status::Ready(p), Some(minimum))
+            if transport::version(&p.manifest.version).is_ok_and(|version| version >= minimum))
+    }
+
     fn start(
         &mut self,
         wake: rune::Waker,
@@ -106,6 +127,7 @@ impl Updater {
         {
             return;
         }
+        self.last_check = Some(Instant::now());
         self.next_check = Instant::now() + Duration::from_secs(12 * 3600);
         self.status = Status::Checking;
         self.start(wake, |_| transport::check().map(Answer::Checked));
@@ -167,6 +189,36 @@ pub fn poll(s: &mut State, tx: &mut rune::Tx) -> bool {
         }
         changed = true;
     }
+    if !matches!(s.updater.status, Status::Unavailable)
+        && let Some(wake) = s.window_waker.clone() {
+        changed |= s.updater.policy.poll(&wake, tx);
+        if let Some(minimum) = s.updater.required() {
+            let now = Instant::now();
+            if s.updater.worker.is_none() {
+                match &s.updater.status {
+                    Status::Available(m) if transport::version(&m.version).is_ok_and(|v| v >= minimum) => {
+                        s.updater.download(wake);
+                        s.updater.policy.retry = now + Duration::from_secs(600);
+                        changed = true;
+                    }
+                    Status::Ready(_) if !s.updater.required_ready() => {
+                        s.updater.status = Status::Idle;
+                        s.updater.policy.retry = now;
+                        changed = true;
+                        tx.wake_after(Duration::ZERO);
+                    }
+                    Status::Ready(_) | Status::Preparing | Status::Installing => {}
+                    _ if now >= s.updater.policy.retry => {
+                        s.updater.policy.retry = now + Duration::from_secs(600);
+                        s.updater.check(wake);
+                        changed = true;
+                    }
+                    _ => tx.wake_after(s.updater.policy.retry - now),
+                }
+            }
+            return changed;
+        }
+    }
     if s.updater.automatic
         && !matches!(
             s.updater.status,
@@ -199,7 +251,7 @@ pub fn act(s: &mut State, tx: &mut rune::Tx) {
         s.updater
             .start(wake, move |_| prepared.launch().map(Answer::Installer));
     } else if let Some(wake) = &s.window_waker {
-        if matches!(s.updater.status, Status::Available(_)) {
+        if matches!(s.updater.status, Status::Available(_)) && s.updater.required().is_none() {
             s.updater.download(wake.clone());
         } else {
             s.updater.check(wake.clone());
@@ -218,6 +270,29 @@ fn save_before_install(s: &mut State) -> Result<(), String> {
         return Err("Update cancelled: library could not be saved".into());
     }
     s.store.flush_background()
+}
+
+pub fn release_note(s: &State) -> Option<&'static str> {
+    match (env!("CARGO_PKG_VERSION"), s.language) {
+        ("0.0.1", crate::i18n::Language::Chinese) => Some("安装包和更新现已通过 Echo 下载域名分发。Mac 支持 Apple Silicon 和 Intel。"),
+        ("0.0.1", crate::i18n::Language::English) => Some("Echo now delivers installers and updates from its own download domain. Mac downloads are available for Apple Silicon and Intel."),
+        _ => None,
+    }
+}
+
+pub fn show_release_note(s: &mut State) {
+    let current = env!("CARGO_PKG_VERSION");
+    let previous = s.store.preference("last_started_version");
+    if previous.as_deref() == Some(current) { return; }
+    if let Err(error) = s.store.set_preference("last_started_version", current) {
+        eprintln!("Could not record app version: {error}");
+        return;
+    }
+    if previous.as_deref().and_then(|value| transport::version(value).ok())
+        .is_some_and(|old| transport::version(current).is_ok_and(|now| old < now))
+        && s.message.is_none() && let Some(note) = release_note(s) {
+        s.message = Some(format!("Echo {current} · {note}"));
+    }
 }
 
 pub fn toggle(s: &mut State, tx: &mut rune::Tx) {

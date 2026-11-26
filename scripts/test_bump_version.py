@@ -54,8 +54,6 @@ class ReleaseVersionTests(unittest.TestCase):
         self.assertEqual(plist["CFBundleShortVersionString"], target)
         identity = ET.parse(self.root / "packaging/windows/Echo.manifest").getroot()[0]
         self.assertEqual(identity.get("version"), target + ".0")
-        self.assertNotIn(f"/v{current}/Echo-", (self.root / "README.md").read_text(encoding="utf-8"))
-        self.assertIn(f"/v{target}/Echo-{target}-", (self.root / "README.md").read_text(encoding="utf-8"))
         self.assertEqual(version.prepare(self.root)[0], target)
 
     def test_preview_and_consistency_check_do_not_write_files(self):
@@ -75,7 +73,7 @@ class ReleaseVersionTests(unittest.TestCase):
             self.assertNotIn(b"\n", data.replace(b"\r\n", b""))
 
     def test_inconsistent_references_abort_before_writing(self):
-        for name in ("Cargo.lock", "packaging/Info.plist", "packaging/windows/Echo.manifest", "README.md"):
+        for name in ("Cargo.lock", "packaging/Info.plist", "packaging/windows/Echo.manifest"):
             with self.subTest(name=name):
                 original = (self.root / name).read_bytes()
                 current = version.prepare(self.root)[0]

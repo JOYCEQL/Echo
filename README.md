@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/storage-Local%20Markdown-green" height="20" alt="本地 Markdown 存储">
 </p>
 
-<p align="center"><a href="https://github.com/JOYCEQL/Echo/releases/download/v0.0.3/Echo-0.0.3-macos-arm64.zip"><img src="docs/images/get-macos.svg" width="208" height="54" alt="下载 macOS 版"></a>&nbsp;&nbsp;&nbsp;<a href="https://github.com/JOYCEQL/Echo/releases/download/v0.0.3/Echo-0.0.3-windows-x64-setup.exe"><img src="docs/images/get-windows.svg" width="208" height="54" alt="下载 Windows 版"></a></p>
+<p align="center"><a href="https://echo-downloads.magicv.art/latest/Echo-macos-arm64.dmg"><img src="docs/images/get-macos.svg" width="208" height="54" alt="下载 macOS 版"></a>&nbsp;&nbsp;&nbsp;<a href="https://echo-downloads.magicv.art/latest/Echo-windows-x64-setup.exe"><img src="docs/images/get-windows.svg" width="208" height="54" alt="下载 Windows 版"></a></p>
 
 <p align="center">
   <a href="#安装说明"><b>下载</b></a> ·
@@ -30,7 +30,7 @@
 </p>
 
 > [!NOTE]
-> 从 [GitHub Releases][releases] 下载适合系统的安装包。首次安装后，可以在「设置 → 软件更新」中检查并下载新版。
+> 通过上方按钮从 Echo 下载域名获取安装包。首次安装后，可以在「设置 → 软件更新」中检查并下载新版。
 
 ## 为什么是 Echo
 
@@ -50,13 +50,13 @@
 
 ## 安装说明
 
-- **macOS**：支持 macOS 13 或更新版本（Apple Silicon），解压 ZIP 后将 `Echo.app` 移入「应用程序」。
+- **macOS**：支持 macOS 13 或更新版本（Apple Silicon 或 Intel），Apple Silicon 下载上方安装包，Intel 下载 [Intel 安装包](https://echo-downloads.magicv.art/latest/Echo-macos-x86_64.dmg)。打开 DMG 后将 `Echo.app` 移入「应用程序」。
 - **Windows**：支持 Windows 10 (1809+) / Windows 11（x64，显卡驱动需支持 DX12 或 Vulkan），运行 `.exe` 安装程序即可。
 - **应用内更新**：安装发行版后默认自动检查新版本，发现新版时侧栏会出现下载按钮；点击下载并校验完成后，再确认重启升级。可在「设置 → 软件更新」手动检查或关闭自动检查。
 
 ### 首次安装的系统安全提示
 
-当前 macOS 包仅使用 ad-hoc 签名，尚未经过 Apple 公证，首次打开从网上下载的应用时可能被 Gatekeeper 拦截；Windows 包尚未使用 Authenticode 签名，可能出现 SmartScreen「Windows 已保护你的电脑」提示。
+v0.0.1 的 macOS 包使用 ad-hoc 签名，尚未经过 Apple 公证，首次打开从网上下载的应用时可能被 Gatekeeper 拦截；Windows 包尚未使用 Authenticode 签名，可能出现 SmartScreen「Windows 已保护你的电脑」提示。
 
 请先确认安装包来自本项目的正式发布渠道，再按对应系统的步骤操作。
 
@@ -100,7 +100,7 @@ cargo run --locked
 
 运行测试使用 `cargo test --locked`。
 
-发版时，在 GitHub Actions 中运行 **Prepare release**（分支选择 `main`），默认自动递增补丁号，例如 `0.0.1 → 0.0.2`，同步各平台版本和下载链接，并提交、创建版本 tag。Mac 与 Windows 使用同一个 tag 打包。详见[自动递增发版版本](./packaging/UPDATES.md#自动递增发版版本)。
+发版时，在 GitHub Actions 中运行 **Prepare release**（分支选择 `main`），默认自动递增补丁号，例如 `0.0.1 → 0.0.2`，同步各平台版本，并提交、创建版本 tag。Mac 与 Windows 使用同一个 tag 打包。详见[自动递增发版版本](./packaging/UPDATES.md#自动递增发版版本)。
 
 ## 开源协议
 
@@ -122,8 +122,5 @@ Echo 的原创代码采用 **GNU Affero General Public License v3.0（AGPL-3.0-o
   <a href="./docs/guide.md">使用与备份指南</a> ·
   <a href="./packaging/UPDATES.md">打包与应用内更新</a> ·
   <a href="./THIRD_PARTY.md">第三方组件说明</a> ·
-  <a href="https://github.com/JOYCEQL/Echo/releases">历史版本</a>
+  <a href="https://echo-downloads.magicv.art/latest/Echo-source.tar.gz">当前版本对应源码</a>
 </p>
-
-<!-- 发布维护：迁移时统一替换顶部下载按钮与下方的发布仓库地址。Prepare release 自动同步下载链接中的 tag 和附件版本；发布前确认对应安装包已上传。 -->
-[releases]: https://github.com/JOYCEQL/Echo/releases

@@ -68,8 +68,13 @@ fn setup(s: &mut State, waker: Waker) {
     let cache = ImageCache::new(waker);
     s.page_icons.load(&cache);
     s.cache = Some(cache);
+    update::show_release_note(s);
 }
 pub(crate) fn key(s: &mut State, e: &KeyEvent, tx: &mut Tx) -> bool {
+    if s.updater.required_ready() {
+        if e.key == Key::Enter { update::act(s, tx); }
+        return true;
+    }
     if e.key == Key::Escape && s.nav_drag.is_some() {
         s.nav_drag = None;
         s.just_dragged_nav = true;
@@ -302,6 +307,7 @@ fn main() {
         .font_smoothing(platform::FONT_SMOOTHING)
         .on_ime(doc_editor::on_ime)
         .on_focus(|s, focused, tx| {
+            if focused { s.updater.foreground(); }
             s.editor.active.window_focused = focused;
             if focused
                 && canvas_document::enabled(s)

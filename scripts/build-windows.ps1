@@ -23,11 +23,24 @@ try {
     Copy-Item (Join-Path $Root 'licenses') $Package -Recurse -Force
     Copy-Item (Join-Path $Root 'LICENSE') $Package -Force
     Copy-Item (Join-Path $Root 'THIRD_PARTY.md') $Package -Force
+    function Sign-ReleaseFile([string]$File) {
+        & signtool sign /sha1 $env:ECHO_WINDOWS_CERT_THUMBPRINT /fd SHA256 /tr $env:ECHO_WINDOWS_TIMESTAMP_URL /td SHA256 $File
+        if ($LASTEXITCODE -ne 0) { throw "Authenticode signing failed for $File" }
+        & signtool verify /pa $File
+        if ($LASTEXITCODE -ne 0) { throw "Authenticode verification failed for $File" }
+    }
+    if ($env:ECHO_WINDOWS_CERT_THUMBPRINT -or $env:ECHO_WINDOWS_TIMESTAMP_URL) {
+        if (-not ($env:ECHO_WINDOWS_CERT_THUMBPRINT -and $env:ECHO_WINDOWS_TIMESTAMP_URL)) {
+            throw 'Set both ECHO_WINDOWS_CERT_THUMBPRINT and ECHO_WINDOWS_TIMESTAMP_URL.'
+        }
+        Sign-ReleaseFile (Join-Path $Package 'Echo.exe')
+    }
     Compress-Archive -Path "$Package/*" -DestinationPath "$Dist/$Name.zip" -Force
     if ($Installer) {
         if (-not (Test-Path $Iscc -PathType Leaf)) { throw "Install Inno Setup 6, or pass -Iscc: $Iscc" }
         & $Iscc "/DAppVersion=$Version" "/DSourceDir=$Package" "/DOutputDir=$Dist" (Join-Path $Root 'packaging/windows/Echo.iss')
         if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed' }
+        if ($env:ECHO_WINDOWS_CERT_THUMBPRINT) { Sign-ReleaseFile "$Dist/$Name-setup.exe" }
     }
     Write-Host "Windows artifacts: $Dist"
 } finally { Pop-Location }

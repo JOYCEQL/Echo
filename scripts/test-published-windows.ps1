@@ -7,7 +7,6 @@ if (-not $IsWindows -or $env:GITHUB_ACTIONS -ne 'true' -or (Split-Path (Get-Loca
 $Root = (Get-Location).Path
 $Version = ((cargo metadata --no-deps --format-version 1 | ConvertFrom-Json).packages | Where-Object name -eq 'echo').version
 if ($LASTEXITCODE -ne 0 -or $Version -notmatch '^\d+\.\d+\.\d+$' -or $Version -eq '0.0.0') { throw 'Expected a stable release version' }
-$env:ECHO_UPDATE_REPOSITORY = "https://github.com/JOYCEQL/Echo"
 $env:ECHO_UPDATE_PUBLIC_KEY = (Get-Content packaging/echo-update.pub)[1]
 $env:ECHO_DATA_DIR = Join-Path $env:RUNNER_TEMP 'Echo QA Library'
 $env:ECHO_SMOKE_REPORT = Join-Path $env:RUNNER_TEMP 'echo-transfer.txt'
@@ -65,7 +64,7 @@ $env:ECHO_EXPECT_RELEASE = $Version
 $Published = $false
 for ($i = 0; $i -lt 90; $i++) {
     try {
-        $Feed = Invoke-RestMethod "$env:ECHO_UPDATE_REPOSITORY/releases/latest/download/update-windows-x64.json"
+        $Feed = Invoke-RestMethod "https://echo-downloads.magicv.art/latest/update-windows-x64.json"
         $Published = $Feed.version -eq $Version
     } catch { Write-Host "Waiting for the public $Version feed" }
     if ($Published) { break }

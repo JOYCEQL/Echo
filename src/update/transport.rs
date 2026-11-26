@@ -10,32 +10,7 @@ use std::{
 
 const MAX_PACKAGE: u64 = 512 * 1024 * 1024;
 
-pub fn repository() -> Result<&'static str, String> {
-    let url =
-        option_env!("ECHO_UPDATE_REPOSITORY").ok_or("This build has no release repository")?;
-    validate_repository(url)?;
-    Ok(url)
-}
-
-pub fn validate_repository(url: &str) -> Result<(), String> {
-    let path = url
-        .strip_prefix("https://github.com/")
-        .ok_or("Update repository must use GitHub HTTPS")?;
-    let parts: Vec<_> = path.split('/').collect();
-    if parts.len() != 2
-        || parts.iter().any(|part| {
-            part.is_empty()
-                || *part == "."
-                || *part == ".."
-                || !part
-                    .bytes()
-                    .all(|b| b.is_ascii_alphanumeric() || b"-_.".contains(&b))
-        })
-    {
-        return Err("Invalid update repository".into());
-    }
-    Ok(())
-}
+pub const DOWNLOAD_ORIGIN: &str = "https://echo-downloads.magicv.art";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -43,6 +18,7 @@ pub struct Manifest {
     pub version: String,
     pub platform: String,
     pub size: u64,
+    pub url: String,
     pub signature: String,
 }
 
@@ -88,17 +64,16 @@ impl Manifest {
         };
         format!("Echo-{}-{}{suffix}", self.version, self.platform)
     }
-    pub fn url(&self, repository: &str) -> String {
-        format!(
-            "{repository}/releases/download/v{}/{}",
-            self.version,
-            self.name()
-        )
+    pub fn expected_url(&self) -> String {
+        format!("{DOWNLOAD_ORIGIN}/v{}/{}", self.version, self.name())
     }
     pub fn validate(&self, expected_platform: &str) -> Result<(), String> {
         version(&self.version)?;
         if self.platform != expected_platform {
             return Err("Update platform mismatch".into());
+        }
+        if self.url != self.expected_url() {
+            return Err("Unexpected update package URL".into());
         }
         if self.size == 0 || self.size > MAX_PACKAGE {
             return Err("Invalid update size".into());
@@ -182,7 +157,7 @@ fn copy_download(
     }
 }
 
-fn fetch(
+pub(super) fn fetch(
     url: &str,
     destination: &Path,
     max_size: u64,
@@ -190,21 +165,17 @@ fn fetch(
     progress: &dyn Fn(u8),
 ) -> Result<u64, String> {
     let out = fs::File::create(destination).map_err(|e| e.to_string())?;
-    // GitHub serves release assets via HTTPS redirects to its asset CDN.
     let mut errors = tempfile::tempfile().map_err(|e| e.to_string())?;
     let error_sink = errors.try_clone().map_err(|e| e.to_string())?;
-    let mut child = crate::platform::curl()?
+    let mut command = crate::platform::curl()?;
+    command.arg("--disable");
+    super::proxy::configure(&mut command);
+    let mut child = command
         .args([
-            "--disable",
             "--fail",
             "--silent",
             "--show-error",
-            "--location",
-            "--max-redirs",
-            "5",
             "--proto",
-            "=https",
-            "--proto-redir",
             "=https",
             "--connect-timeout",
             "15",
@@ -240,13 +211,12 @@ fn fetch(
 
 pub fn check() -> Result<Option<Manifest>, String> {
     public_key()?;
-    let repository = repository()?;
     super::native::installed_app()?;
     let platform = platform()?;
     let directory = tempfile::tempdir().map_err(|e| e.to_string())?;
     let file = directory.path().join("manifest.json");
     fetch(
-        &format!("{repository}/releases/latest/download/update-{platform}.json"),
+        &format!("{DOWNLOAD_ORIGIN}/latest/update-{platform}.json"),
         &file,
         64 * 1024,
         30,
@@ -264,18 +234,25 @@ pub fn download(
     progress: &dyn Fn(u8),
 ) -> Result<(), String> {
     manifest.validate(platform()?)?;
-    let received = fetch(
-        &manifest.url(repository()?),
-        destination,
-        manifest.size,
-        900,
-        progress,
-    )?;
-    if received != manifest.size {
-        return Err("Update size mismatch".into());
+    let key = public_key()?;
+    let url = &manifest.url;
+    let transfer = |request: &str| -> Result<Result<(), String>, String> {
+        let received = fetch(request, destination, manifest.size, 900, progress)?;
+        if received != manifest.size {
+            return Ok(Err("Update size mismatch".into()));
+        }
+        progress(100);
+        Ok(manifest.verify(destination, &key))
+    };
+    if transfer(url)?.is_ok() {
+        return Ok(());
     }
-    progress(100);
-    manifest.verify(destination, &public_key()?)
+    let nonce = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|error| error.to_string())?
+        .as_nanos();
+    progress(0);
+    transfer(&format!("{url}?nocache={nonce}"))?
 }
 
 #[cfg(test)]

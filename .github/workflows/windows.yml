@@ -4,6 +4,7 @@ on:
     branches: [main, 'codex/**']
   pull_request:
   workflow_dispatch:
+  workflow_call:
 permissions:
   contents: read
 jobs:
@@ -39,7 +40,6 @@ jobs:
           $PublicKey = (Get-Content packaging/echo-update.pub)[1]
           if ([Convert]::FromBase64String($PublicKey).Length -ne 42) { throw 'Invalid Echo update public key' }
           "ECHO_UPDATE_PUBLIC_KEY=$PublicKey" >> $env:GITHUB_ENV
-          "ECHO_UPDATE_REPOSITORY=$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY" >> $env:GITHUB_ENV
       - name: Build portable zip and per-user installer
         shell: pwsh
         run: ./scripts/build-windows.ps1 -Installer

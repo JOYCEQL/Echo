@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parent.parent
 FILES = (
     "Cargo.toml", "Cargo.lock", "packaging/Info.plist",
-    "packaging/windows/Echo.manifest", "README.md",
+    "packaging/windows/Echo.manifest",
 )
 SEMVER = r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
 
@@ -98,11 +98,6 @@ def prepare(root, part=None):
         rf'(<assemblyIdentity\s+version="){old}\.0(")', target + ".0", "Windows assembly version",
     )
 
-    link = re.compile(r"(/releases/download/v)([0-9]+\.[0-9]+\.[0-9]+)(/Echo-)([0-9]+\.[0-9]+\.[0-9]+)(-(?:macos|windows)-)")
-    links = list(link.finditer(texts["README.md"]))
-    if not links or any(m[2] != current or m[4] != current for m in links):
-        raise VersionError("README download links do not match Echo's current version")
-    texts["README.md"] = link.sub(lambda m: m[1] + target + m[3] + target + m[5], texts["README.md"])
     return current, target, originals, {name: text.encode("utf-8") for name, text in texts.items()}
 
 

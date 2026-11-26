@@ -115,3 +115,45 @@ pub fn update_button(s: &State) -> El {
         ),
     )
 }
+
+pub fn policy_notice(s: &State, width: f32, height: f32) -> Option<El> {
+    s.updater.required()?;
+    let policy = s.updater.policy.current.as_ref()?;
+    let message = match s.language {
+        crate::i18n::Language::Chinese => &policy.message_zh,
+        crate::i18n::Language::English => &policy.message_en,
+    };
+    let ink = crate::ui::theme_ink(s.theme());
+    let mut content = rune::col().gap(10.).padding(18.)
+        .child(label(s.tr("需要更新 Echo"), 16., 600., ink));
+    if !message.is_empty() {
+        content = content.child(label(message, 13., 450., ink).wrap());
+    }
+    if s.updater.required_ready() {
+        let panel = crate::overlays::dialog_surface(s, content.w_full().max_w(440.)
+            .role("dialog").label(s.tr("需要更新 Echo"))
+            .child(crate::overlays::button(s, "required-update-install", s.tr("重启更新"), true, false)
+                .on_press_tx(super::act))).modal(false, |_: &mut State| {});
+        return Some(el().key("required-update-dialog").absolute(0., 0.).size(width, height)
+            .fill(Color::BLACK.alpha(0.35)).center().child(panel));
+    }
+    let detail = match &s.updater.status {
+        Status::Failed(error) | Status::CheckFailed(error) => error.clone(),
+        Status::Downloading(percent) => format!("{} {percent}%", s.tr("正在下载更新")),
+        Status::Verifying => s.tr("正在校验更新…").to_string(),
+        Status::Preparing | Status::Installing => s.tr("正在准备重启…").to_string(),
+        _ => s.tr("正在检查更新…").to_string(),
+    };
+    content = content.child(label(detail, 12., 450., ink).wrap());
+    if matches!(s.updater.status, Status::Failed(_) | Status::CheckFailed(_) | Status::Current | Status::Available(_))
+        && s.updater.worker.is_none() {
+        content = content.child(crate::overlays::button(s, "required-update-retry", s.tr("重新检查"), false, false)
+            .on_press_tx(|s: &mut State, tx| {
+                s.updater.policy.retry = std::time::Instant::now();
+                tx.instant();
+            }));
+    }
+    let width = (width - 48.).min(460.);
+    Some(crate::overlays::surface(s, content.key("required-update-banner").role("alert")
+        .pin(None, None, Some(24.), Some(24.)).w(width), 12.))
+}
