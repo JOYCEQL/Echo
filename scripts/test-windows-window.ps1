@@ -62,7 +62,9 @@ try {
     Start-Process -FilePath $Shortcut
     Wait-For {
         $Clients = @(Get-Clients)
-        $Clients.Count -eq 1 -and (Test-VisibleWindow $Clients[0].MainWindowHandle)
+        # During startup Windows may briefly report a different, untitled HWND.
+        $Clients.Count -eq 1 -and $Clients[0].MainWindowTitle -ceq 'Echo' -and
+            (Test-VisibleWindow $Clients[0].MainWindowHandle)
     } 'one responsive window after two launches'
     $Client = Get-Clients
     $Handle = $Client.MainWindowHandle
